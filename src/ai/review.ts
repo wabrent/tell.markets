@@ -98,7 +98,8 @@ async function deepseekReview(prompt: string): Promise<AiReview | undefined> {
         headers: { 'content-type': 'application/json', authorization: `Bearer ${config.deepseekKey}` },
         body: JSON.stringify({
           model: config.deepseekModel,
-          max_tokens: 2000,
+          // generous: the model may reason before answering, and a cut-off answer is unusable JSON
+          max_tokens: 8000,
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: `${SYSTEM}\n\n${DEEPSEEK_SHAPE}` },
@@ -109,9 +110,10 @@ async function deepseekReview(prompt: string): Promise<AiReview | undefined> {
       if (res.status === 401) { console.error('AI review: the DeepSeek API key was rejected'); return undefined; }
       if (res.status === 402) { console.error('AI review: DeepSeek balance is empty'); return undefined; }
       if (!res.ok) { console.error(`AI review: DeepSeek error ${res.status}`, (await res.text()).slice(0, 300)); continue; }
-      const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-      const content = data.choices?.[0]?.message?.content?.trim();
-      if (!content) continue;
+      const data = await res.json() as { choices?: { message?: { content?: string }; finish_reason?: string }[] };
+      const choice = data.choices?.[0];
+      const content = choice?.message?.content?.trim();
+      if (!content || choice?.finish_reason === 'length') { console.warn('AI review: empty or cut-off answer, retrying'); continue; }
       const review = valid(JSON.parse(content));
       if (review) return review;
     } catch (err) {
