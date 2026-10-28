@@ -1,63 +1,153 @@
 import { readFile } from 'node:fs/promises';
-import { createServer, type ServerResponse } from 'node:http';
-import { analyze, resolveToken, type Report } from './analyze.js';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { isAddress, type Hex } from 'viem';
+import { resolveToken, type Report } from './analyze.js';
+import { isHolder, newNonce, sessionAddress, signInMessage, signOut, tellBalance, verify } from './auth.js';
 import { config } from './config.js';
+import { launchFeed, startLaunchWatcher } from './launches.js';
+import { siteCard, tokenCard } from './og.js';
+import { cachedReport, getReport, scoreHistory } from './reports.js';
 
-const PAGE = new URL('../web/index.html', import.meta.url);
-const APP = new URL('../web/app.html', import.meta.url);
-const CACHE_MS = 10 * 60_000;
+const PAGES: Record<string, URL> = {
+  index: new URL('../web/index.html', import.meta.url),
+  app: new URL('../web/app.html', import.meta.url),
+  launches: new URL('../web/launches.html', import.meta.url),
+  compare: new URL('../web/compare.html', import.meta.url),
+};
+const TYPES: Record<string, string> = { webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', js: 'text/javascript; charset=utf-8' };
 const RATE_LIMIT = 20; // checks per IP per minute
 
-const TYPES: Record<string, string> = { webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml' };
-
-const cache = new Map<string, { at: number; report: Report }>();
 const hits = new Map<string, { at: number; n: number }>();
+const daily = new Map<string, { day: string; n: number }>();
+const cards = new Map<string, Buffer>();
 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
+  const path = url.pathname;
   try {
-    if (url.pathname === '/api/check') {
-      return await check(url.searchParams.get('q') ?? '', url.searchParams.has('flow'), clientIp(req.headers, req.socket.remoteAddress), res);
+    // ---------- API ----------
+    if (path === '/api/check') return await check(req, res, url);
+    if (path === '/api/launches') return json(res, 200, { launches: launchFeed() });
+    if (path === '/api/auth/nonce') {
+      const address = url.searchParams.get('address') ?? '';
+      if (!isAddress(address)) return json(res, 400, { error: 'Bad address' });
+      const nonce = newNonce();
+      return json(res, 200, { nonce, message: signInMessage(address, nonce) });
     }
-    // the app: "/app" and "/app/0x…"
-    if (url.pathname === '/app' || url.pathname.startsWith('/app/')) {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      return res.end(await readFile(APP));
+    if (path === '/api/auth/verify' && req.method === 'POST') {
+      const body = JSON.parse(await readBody(req)) as { address: string; nonce: string; signature: Hex };
+      const sid = await verify(body.address, body.nonce, body.signature);
+      if (!sid) return json(res, 401, { error: 'Signature did not check out' });
+      res.setHeader('set-cookie', `tell_sid=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 3600}${secure(req) ? '; Secure' : ''}`);
+      return json(res, 200, await me(body.address));
     }
-    // "/" and shareable report links "/t/0x…" both serve the page; it reads the address from the path.
-    if (url.pathname === '/' || url.pathname.startsWith('/t/')) {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      return res.end(await readFile(PAGE));
+    if (path === '/api/auth/logout' && req.method === 'POST') {
+      signOut(req.headers.cookie);
+      res.setHeader('set-cookie', 'tell_sid=; Path=/; Max-Age=0');
+      return json(res, 200, { ok: true });
     }
-    const asset = url.pathname.match(/^\/assets\/([\w.-]+\.(webp|png|jpg|svg))$/);
+    if (path === '/api/me') return json(res, 200, await me(sessionAddress(req.headers.cookie)));
+
+    // ---------- share cards ----------
+    if (path === '/og/site.png') return png(res, cards.get('site') ?? cards.set('site', siteCard()).get('site')!);
+    const og = path.match(/^\/og\/(0x[a-fA-F0-9]{40})\.png$/);
+    if (og) {
+      const c = cachedReport(og[1]);
+      if (!c) return png(res, cards.get('site') ?? cards.set('site', siteCard()).get('site')!);
+      const key = `${og[1].toLowerCase()}:${c.at}`;
+      if (!cards.has(key)) { if (cards.size > 300) cards.clear(); cards.set(key, tokenCard(c.report)); }
+      return png(res, cards.get(key)!);
+    }
+
+    // ---------- pages ----------
+    const addr = path.match(/^\/(?:t|app)\/(0x[a-fA-F0-9]{40})/)?.[1];
+    if (path === '/' || path.startsWith('/t/')) return page(req, res, 'index', addr);
+    if (path === '/app' || path.startsWith('/app/')) return page(req, res, 'app', addr);
+    if (path === '/launches') return page(req, res, 'launches');
+    if (path === '/compare') return page(req, res, 'compare');
+
+    const asset = path.match(/^\/assets\/([\w.-]+\.(webp|png|jpg|svg|js))$/);
     if (asset) {
       const file = await readFile(new URL(`../web/assets/${asset[1]}`, import.meta.url)).catch(() => undefined);
       if (file) {
-        res.writeHead(200, { 'content-type': TYPES[asset[2]], 'cache-control': 'public, max-age=86400' });
+        res.writeHead(200, { 'content-type': TYPES[asset[2]], 'cache-control': asset[2] === 'js' ? 'no-cache' : 'public, max-age=86400' });
         return res.end(file);
       }
     }
     json(res, 404, { error: 'Not found' });
   } catch (err) {
     console.error(err);
-    json(res, 500, { error: 'Could not check this token. Try again in a minute.' });
+    if (!res.headersSent) json(res, 500, { error: 'Could not check this token. Try again in a minute.' });
   }
-}).listen(config.port, () => console.log(`Tell: http://localhost:${config.port}`));
+}).listen(config.port, () => {
+  console.log(`Tell: http://localhost:${config.port}`);
+  if (config.launchWatcher) startLaunchWatcher();
+});
 
-async function check(q: string, withFlow: boolean, ip: string, res: ServerResponse) {
+async function check(req: IncomingMessage, res: ServerResponse, url: URL) {
+  const ip = clientIp(req);
   if (!allow(ip)) return json(res, 429, { error: 'Too many checks. Wait a minute.' });
 
-  const address = await resolveToken(q);
+  const address = await resolveToken(url.searchParams.get('q') ?? '');
   if (!address) return json(res, 400, { error: 'No token address found. Paste a 0x… address or a DexScreener link.' });
 
-  const key = address.toLowerCase();
-  const hit = cache.get(key);
-  let report = hit && Date.now() - hit.at < CACHE_MS ? hit.report : undefined;
-  if (!report) {
-    report = await analyze(address);
-    cache.set(key, { at: Date.now(), report });
+  // free tier: only enforced once $TELL exists and a limit is configured
+  if (config.freeChecksPerDay > 0 && !cachedReport(address)) {
+    const who = sessionAddress(req.headers.cookie);
+    if (!(await isHolder(who))) {
+      const day = new Date().toISOString().slice(0, 10);
+      const key = who ?? ip;
+      const d = daily.get(key);
+      const n = d?.day === day ? d.n : 0;
+      if (n >= config.freeChecksPerDay) {
+        return json(res, 402, { error: `Free limit reached: ${config.freeChecksPerDay} new checks a day. Hold $TELL for unlimited checks.` });
+      }
+      daily.set(key, { day, n: n + 1 });
+    }
   }
-  json(res, 200, withFlow ? report : { ...report, flow: undefined });
+
+  const report = await getReport(address);
+  const body: Report & { history: unknown } = { ...report, history: scoreHistory(address).slice(-60) };
+  json(res, 200, url.searchParams.has('flow') ? body : { ...body, flow: undefined });
+}
+
+async function me(address: string | undefined) {
+  const holds = address ? await tellBalance(address).catch(() => 0) : 0;
+  return {
+    address: address ?? null,
+    tokenLive: Boolean(config.tellToken),
+    holds,
+    holderMin: config.holderMin,
+    holder: Boolean(config.tellToken) && holds >= config.holderMin,
+    freeChecksPerDay: config.freeChecksPerDay,
+  };
+}
+
+/** Serves a page with share-card tags for the token in its URL, so links unfurl on X. */
+async function page(req: IncomingMessage, res: ServerResponse, name: string, addr?: string) {
+  let html = await readFile(PAGES[name], 'utf8');
+  const base = config.publicUrl || `${secure(req) ? 'https' : 'http'}://${req.headers.host}`;
+  const c = addr ? cachedReport(addr) : undefined;
+  const sym = c?.report.token.symbol ? `$${c.report.token.symbol}` : undefined;
+  const title = c ? `${sym ?? 'Token'}: ${c.report.score.value}/100 risk — Tell` : 'Tell — read the tell before you buy';
+  const desc = c ? c.report.verdict : 'Launch checks on Robinhood Chain: contract, holders, deployer and website in one risk score.';
+  const image = c && addr ? `${base}/og/${addr}.png?v=${c.at}` : `${base}/og/site.png`;
+  const tags = [
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:site_name" content="Tell">`,
+    `<meta property="og:title" content="${attr(title)}">`,
+    `<meta property="og:description" content="${attr(desc)}">`,
+    `<meta property="og:image" content="${attr(image)}">`,
+    `<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">`,
+    `<meta property="og:url" content="${attr(base + (req.url ?? '/'))}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:title" content="${attr(title)}">`,
+    `<meta name="twitter:description" content="${attr(desc)}">`,
+    `<meta name="twitter:image" content="${attr(image)}">`,
+  ].join('\n');
+  html = html.replace('</head>', `${tags}\n</head>`);
+  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+  res.end(html);
 }
 
 function allow(ip: string) {
@@ -70,9 +160,26 @@ function allow(ip: string) {
   return ++h.n <= RATE_LIMIT;
 }
 
-function clientIp(headers: Record<string, string | string[] | undefined>, fallback?: string) {
-  const fwd = headers['x-forwarded-for'];
-  return (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0].trim() || fallback || 'unknown';
+function clientIp(req: IncomingMessage) {
+  const fwd = req.headers['x-forwarded-for'];
+  return (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+}
+
+const secure = (req: IncomingMessage) => req.headers['x-forwarded-proto'] === 'https';
+const attr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', c => { data += c; if (data.length > 10_000) req.destroy(); });
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+}
+
+function png(res: ServerResponse, buf: Buffer) {
+  res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=600' });
+  res.end(buf);
 }
 
 function json(res: ServerResponse, status: number, body: unknown) {

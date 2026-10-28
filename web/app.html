@@ -6,6 +6,7 @@
 <title>Tell App — token map</title>
 <meta name="description" content="Watch where a token's supply goes: an animated map of every transfer since launch, with Tell's risk report alongside.">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
+<script src="/assets/tell.js"></script>
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,6 +177,26 @@ button { font: inherit; color: inherit; }
 .play:hover { transform: scale(1.06); }
 .play svg { width: 14px; height: 14px; }
 .timeline { flex: 1; display: grid; gap: 6px; min-width: 0; }
+.track { position: relative; }
+.marks { position: absolute; left: 6px; right: 6px; top: -4px; height: 0; pointer-events: none; }
+.mark { position: absolute; top: 0; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; pointer-events: auto;
+  background: var(--c); box-shadow: 0 0 0 2px rgba(11,11,12,.9), 0 0 10px var(--c); transform: scale(0); animation: mark-in .5s cubic-bezier(.2,1.6,.4,1) forwards; animation-delay: var(--d); }
+.mark:hover { transform: scale(1.4) !important; }
+@keyframes mark-in { to { transform: scale(1); } }
+.mark-tip { position: absolute; bottom: 64px; transform: translateX(-50%); white-space: nowrap; pointer-events: none; font-size: 12px; background: rgba(26,8,10,.96); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 6px 10px; opacity: 0; transition: opacity .15s; z-index: 7; }
+.mark-tip.show { opacity: 1; }
+.mark-tip b { font-family: var(--mono); font-weight: 400; font-size: 10px; color: var(--muted); margin-right: 6px; }
+.find input { margin-top: 10px; width: 220px; background: var(--panel); border: 1px solid rgba(255,255,255,0.14); color: var(--text); border-radius: 9999px; padding: 6px 12px; font: 11.5px var(--mono); outline: none; backdrop-filter: blur(6px); transition: border-color .2s, width .3s; }
+.find input:focus { border-color: rgba(255,255,255,0.5); width: 260px; }
+.find.miss input { border-color: var(--bad); animation: shake .3s; }
+@keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.spark-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--dim); font-size: 11.5px; }
+.side-actions { display: flex; gap: 6px; margin-top: 8px; }
+.side-actions button { border: 1px solid var(--line-2); background: none; border-radius: 9999px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+.side-actions button:hover { border-color: var(--text); }
+.side-actions button.on { color: var(--amber); border-color: rgba(227,165,64,.5); }
+.top-wallet { margin-left: 4px; }
+@media (max-width: 900px) { .top-wallet { display: none; } }
 .tl-top { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: .06em; }
 .tl-top b { color: var(--text); font-weight: 400; }
 input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: none; cursor: pointer; }
@@ -247,7 +268,9 @@ input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bord
     <input id="q" placeholder="0x… token address or DexScreener link" autocomplete="off" spellcheck="false">
     <button class="btn btn-cream" type="submit">Map it →</button>
   </form>
-  <a class="back" href="/">← Back to site</a>
+  <div data-wallet class="top-wallet"></div>
+  <a class="back" href="/launches">Launches</a>
+  <a class="back" href="/">← Site</a>
 </header>
 
 <div class="layout">
@@ -286,6 +309,7 @@ input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bord
       <span class="label">Token map</span>
       <h1 id="map-title">—</h1>
       <div class="sub" id="map-sub"></div>
+      <form class="find" id="find"><input id="find-q" placeholder="Find address or label…" spellcheck="false" autocomplete="off"></form>
     </div>
     <div class="hud hud-tr" id="chips">
       <button class="chip on" data-f="particles"><i style="background:var(--pale)"></i>Flow</button>
@@ -294,6 +318,7 @@ input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bord
       <button class="chip" data-f="snipers"><i style="background:var(--violet)"></i>Snipers</button>
       <button class="chip" data-f="others">Others</button>
       <button class="chip" data-f="fit">Fit ⤢</button>
+      <button class="chip" data-f="png">PNG ↓</button>
     </div>
 
     <div class="legend" id="legend">
@@ -320,7 +345,7 @@ input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bord
       </button>
       <div class="timeline">
         <div class="tl-top"><span>Launch replay · <b id="tl-block">block 0</b></span><span id="tl-count">0 transfers</span></div>
-        <input type="range" id="tl" min="0" max="1000" value="1000">
+        <div class="track"><input type="range" id="tl" min="0" max="1000" value="1000"><div class="marks" id="marks"></div></div>
       </div>
       <div class="speed" id="speed">
         <button data-s="1">1×</button><button data-s="4" class="on">4×</button><button data-s="16">16×</button>
@@ -433,6 +458,7 @@ function renderSide(r) {
       <span class="risk-tag">${esc(r.score.label)}</span>
       <div class="verdict"><span class="label">${r.aiVerdict ? 'AI verdict' : 'Verdict'}</span>${esc(r.verdict)}</div>
       <div class="meta">${meta.map(m => `<span class="badge">${esc(m)}</span>`).join('')}</div>
+      ${r.history?.length > 1 ? `<div class="spark-row">${Tell.sparkline(r.history, 130, 28)}<span>risk over time</span></div>` : ''}
     </div>
     <div class="groups">${groups}</div>
     <div class="side-links">
@@ -441,8 +467,22 @@ function renderSide(r) {
       ${pair ? `<a href="${esc(pair.url)}" target="_blank" rel="noopener">DexScreener ↗</a>` : ''}
       <a href="https://robinhoodchain.blockscout.com/token/${r.token.address}" target="_blank" rel="noopener">Explorer ↗</a>
       <a href="/t/${r.token.address}">Full report</a>
+      <a href="/compare?a=${r.token.address}">Compare</a>
+    </div>
+    <div class="side-actions">
+      <button type="button" id="watch">${Tell.watch.has(r.token.address) ? '★ Watching' : '☆ Watch'}</button>
+      <button type="button" id="tweet">Share on X</button>
     </div>
     <p class="disclaimer">Not financial advice. Tell describes what it finds and can be wrong.</p>`;
+
+  const watch = $('watch');
+  watch.classList.toggle('on', Tell.watch.has(r.token.address));
+  watch.onclick = () => { const on = Tell.watch.toggle(r); watch.textContent = on ? '★ Watching' : '☆ Watch'; watch.classList.toggle('on', on); };
+  $('tweet').onclick = () => {
+    const sym = r.token.symbol ? '$' + r.token.symbol : 'This token';
+    const link = `${location.origin}/t/${r.token.address}`;
+    open('https://x.com/intent/post?text=' + encodeURIComponent(`${sym} scored ${r.score.value}/100 risk on Tell.\n\n${r.verdict}\n\n`) + '&url=' + encodeURIComponent(link), '_blank', 'noopener');
+  };
 
   requestAnimationFrame(() => { $('meter').style.width = Math.max(r.score.value, 3) + '%'; });
   countUp($('score-n'), r.score.value, 1000);
@@ -525,6 +565,7 @@ function startMap(r) {
   replayReset(true);
   keyPinned = null; setKey(null);
   updateKey();
+  buildMarks();
   transform = d3.zoomIdentity.translate(W / 2, H / 2).scale(0.9);
   d3.select(canvas).call(zoom.transform, transform);
 }
@@ -625,6 +666,7 @@ $('chips').addEventListener('click', e => {
   if (!b) return;
   const f = b.dataset.f;
   if (f === 'fit') return fit(true);
+  if (f === 'png') return exportPng();
   filters[f] = !filters[f];
   b.classList.toggle('on', filters[f]);
   if (f === 'others' && sim) sim.alpha(0.3).restart();
@@ -890,6 +932,85 @@ function shade(hex) {
 }
 
 requestAnimationFrame(frame);
+
+/* ---- moments worth a marker on the replay timeline ---- */
+function buildMarks() {
+  const out = [];
+  const seenSniper = new Set();
+  for (const [blk, s, d, v] of G.events) {
+    const a = G.nodes[s], b = G.nodes[d];
+    if (a.kind === 'mint') { out.push({ blk, node: b, c: '#ece9e2', text: `Minted ${pctf(v)} to ${b.label}` }); continue; }
+    if (a.kind === 'deployer' && isMarket(b)) out.push({ blk, node: a, c: '#ff5a5f', text: `Deployer sold ${pctf(v)}` });
+    else if (b.kind === 'deployer' && isMarket(a) && v >= 0.5) out.push({ blk, node: b, c: '#ff5a5f', text: `Deployer bought ${pctf(v)}` });
+    else if (b.sniper && isMarket(a) && !seenSniper.has(b)) { seenSniper.add(b); out.push({ blk, node: b, c: '#9d8cff', text: `Sniper bought ${pctf(v)}` }); }
+    else if (v >= 2 && !isMarket(a) && !isMarket(b)) out.push({ blk, node: b, c: '#e3a540', text: `${pctf(v)} moved ${a.label} → ${b.label}` });
+    else if (v >= 3 && isMarket(b)) out.push({ blk, node: a, c: '#ff5a5f', text: `Big sell: ${pctf(v)} by ${a.label}` });
+  }
+  // keep it readable: at most 24, spread across the whole replay
+  const marks = out.length > 24 ? out.filter((_, i) => i % Math.ceil(out.length / 24) === 0) : out;
+  const last = Math.max(G.lastBlock, 1);
+  $('marks').innerHTML = marks.map((m, i) =>
+    `<button class="mark" type="button" data-i="${i}" style="left:${(m.blk / last) * 100}%;--c:${m.c};--d:${0.4 + i * 0.04}s" aria-label="${esc(m.text)}"></button>`).join('');
+  let tip = document.querySelector('.mark-tip');
+  if (!tip) { tip = document.createElement('div'); tip.className = 'mark-tip'; document.querySelector('.replay').appendChild(tip); }
+  $('marks').querySelectorAll('.mark').forEach(el => {
+    const m = marks[+el.dataset.i];
+    el.onmouseenter = () => {
+      tip.innerHTML = `<b>block +${m.blk.toLocaleString('en-US')}</b>${esc(m.text)}`;
+      const r = el.getBoundingClientRect(), p = document.querySelector('.replay').getBoundingClientRect();
+      tip.style.left = (r.left - p.left + 4) + 'px';
+      tip.classList.add('show');
+    };
+    el.onmouseleave = () => tip.classList.remove('show');
+    el.onclick = () => {
+      setPlaying(false);
+      seek(m.blk);
+      openPanel(m.node);
+      flashes.set(m.node, performance.now());
+      d3.select(canvas).transition().duration(calm ? 0 : 700).call(zoom.translateTo, m.node.x, m.node.y);
+    };
+  });
+}
+
+/* ---- find an address on the map ---- */
+$('find').addEventListener('submit', e => {
+  e.preventDefault();
+  const q = $('find-q').value.trim().toLowerCase();
+  if (!G || !q) return;
+  const n = G.nodes.find(x => x.id.toLowerCase() === q) || G.nodes.find(x => x.id.toLowerCase().startsWith(q) || x.label.toLowerCase().includes(q));
+  if (!n) { $('find').classList.remove('miss'); void $('find').offsetWidth; $('find').classList.add('miss'); return; }
+  $('find').classList.remove('miss');
+  if (n.kind === 'others' && !filters.others) document.querySelector('[data-f="others"]').click();
+  openPanel(n);
+  flashes.set(n, performance.now());
+  d3.select(canvas).transition().duration(calm ? 0 : 800).call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 2).scale(Math.max(transform.k, 1.6)).translate(-n.x, -n.y));
+});
+
+/* ---- export the current view as a PNG with a caption ---- */
+function exportPng() {
+  if (!G) return;
+  const out = document.createElement('canvas');
+  out.width = canvas.width; out.height = canvas.height;
+  const c = out.getContext('2d');
+  const g = c.createRadialGradient(out.width * 0.55, out.height * 0.42, 0, out.width * 0.55, out.height * 0.42, out.width * 0.7);
+  g.addColorStop(0, '#5a0a10'); g.addColorStop(1, '#0b0b0c');
+  c.fillStyle = g; c.fillRect(0, 0, out.width, out.height);
+  c.drawImage(canvas, 0, 0);
+  const s = DPR;
+  c.fillStyle = '#ece9e2';
+  c.font = `${40 * s}px 'Instrument Serif', serif`;
+  c.fillText($('map-title').textContent, 24 * s, 56 * s);
+  c.font = `${12 * s}px 'JetBrains Mono', monospace`;
+  c.fillStyle = '#9a958d';
+  c.fillText(`${$('map-sub').textContent} · tell.markets`, 24 * s, 80 * s);
+  out.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `tell-map-${($('map-title').textContent || 'token').replace(/[^\w]/g, '')}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }, 'image/png');
+}
 
 // /app/0x… loads straight away
 const fromPath = location.pathname.match(/^\/app\/(0x[a-fA-F0-9]{40})/)?.[1] || new URLSearchParams(location.search).get('q');

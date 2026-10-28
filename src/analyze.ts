@@ -12,6 +12,7 @@ import { client, withBackoff } from './sources/rpc.js';
 import type { Check, TokenInfo } from './checks/types.js';
 import { getPair, getTokenPairs, type DexPair } from './sources/dexscreener.js';
 import { buildFlow, type FlowGraph } from './flow.js';
+import { knownAsset } from './known.js';
 import { score, type Score } from './scoring.js';
 
 export interface Report {
@@ -84,6 +85,17 @@ export async function analyze(address: `0x${string}`): Promise<Report> {
     ...checkSocials(ownPairs, meta),
     ...checkSite(token, site),
   ];
+
+  // Stablecoins, WETH and stock tokens keep owner powers by design; don't score them like a memecoin.
+  const known = knownAsset(address);
+  if (known) {
+    for (const c of checks) {
+      if (c.group !== 'contract' || c.status === 'ok') continue;
+      c.status = 'info'; c.risk = 0; c.critical = false;
+      c.detail = 'expected for this asset';
+    }
+    checks.unshift({ group: 'contract', status: 'ok', title: `Recognized asset: ${known}`, risk: 0 });
+  }
 
   // The AI reads the site and sees every other finding, so it runs last.
   const review = await aiReview(token, checks, site, meta?.description);
