@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tell App — token map</title>
+<meta name="description" content="Watch where a token's supply goes: an animated map of every transfer since launch, with Tell's risk report alongside.">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+:root {
+  --ink: #0b0b0c; --ink-2: #121213; --ink-3: #19191b;
+  --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+  --text: #ece9e2; --muted: #9a958d; --dim: #5f5b55;
+  --red: #8e0c14; --red-deep: #5c070c; --pale: #d6e4f6; --steel: #5f86a6;
+  --panel: rgba(22, 7, 9, 0.78); --wine: #140607;
+  --green: #4fb27a; --amber: #e3a540; --bad: #ff5a5f; --violet: #9d8cff;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --side: 380px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--ink); }
+body { color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow: hidden; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+.label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+/* ---------- Top bar ---------- */
+.top { height: 60px; display: flex; align-items: center; gap: 16px; padding: 0 16px; position: relative; z-index: 10; overflow: hidden;
+  background: radial-gradient(60% 160% at 80% 0%, rgba(255,40,40,0.22), transparent 60%), linear-gradient(90deg, var(--red-deep), var(--red) 55%, #7a0a12);
+  border-bottom: 1px solid rgba(255,255,255,0.12); }
+.top::after, .stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .2; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+.top > * { position: relative; z-index: 1; }
+.brand { font-family: var(--serif); font-size: 20px; letter-spacing: .32em; display: inline-flex; align-items: center; gap: 10px; color: #fff; }
+.logo { width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,0.3); transition: transform .4s cubic-bezier(.2,.7,.2,1); }
+.brand:hover .logo { transform: rotate(-8deg) scale(1.06); }
+.brand-tag { border: 1px solid rgba(255,255,255,0.3); border-radius: 9999px; padding: 2px 8px; color: rgba(255,255,255,0.8); }
+.search { flex: 1; display: flex; gap: 8px; max-width: 640px; margin: 0 auto; }
+.search input { flex: 1; min-width: 0; background: rgba(10,4,5,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 9999px; padding: 9px 16px; font: 13px var(--mono); outline: none; transition: border-color .2s; backdrop-filter: blur(6px); }
+.search input::placeholder { color: rgba(255,255,255,0.5); }
+.search input:focus { border-color: rgba(255,255,255,0.6); }
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 9999px; padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border: 0; white-space: nowrap; transition: background .2s, transform .15s; }
+.btn-cream { background: var(--text); color: var(--ink); }
+.btn-cream:hover { background: #fff; }
+.btn-line { background: none; border: 1px solid var(--line-2); }
+.btn-line:hover { border-color: var(--text); }
+.btn:active { transform: scale(.97); }
+.back { font-size: 13px; color: rgba(255,255,255,0.75); white-space: nowrap; }
+.back:hover { color: #fff; }
+@media (max-width: 700px) { .back, .brand-tag { display: none; } .top { gap: 10px; } }
+
+/* ---------- Layout ---------- */
+.layout { display: grid; grid-template-columns: var(--side) 1fr; height: calc(100% - 60px); }
+@media (max-width: 900px) { body { overflow: auto; } .layout { grid-template-columns: 1fr; grid-template-rows: 62vh auto; height: auto; } .side { order: 2; border-right: 0; border-top: 1px solid var(--line); } }
+
+.side { border-right: 1px solid rgba(255,90,95,0.14); overflow-y: auto; padding: 20px; background: linear-gradient(180deg, #1a0709 0%, var(--wine) 35%, var(--ink) 100%); }
+.side::-webkit-scrollbar { width: 6px; } .side::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+.tk { display: flex; gap: 12px; align-items: center; }
+.tk-ava { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--pale), #1e4e6c); overflow: hidden; flex: none; }
+.tk-ava img { width: 100%; height: 100%; object-fit: cover; }
+.tk-name { font-weight: 500; font-size: 15px; }
+.tk-full { color: var(--dim); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.tk-desc { margin-top: 12px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.tk-ava img { display: block; }
+.tk-addr { font-family: var(--mono); font-size: 11px; color: var(--dim); cursor: pointer; }
+.tk-addr:hover { color: var(--muted); }
+.score { margin-top: 20px; display: flex; align-items: baseline; gap: 10px; }
+.score b { font-family: var(--serif); font-weight: 400; font-size: 72px; line-height: .85; }
+.score span { color: var(--dim); font-size: 12px; }
+.t-ok { --c: var(--green); } .t-mid { --c: #d8c24a; } .t-warn { --c: var(--amber); } .t-bad { --c: var(--bad); }
+.meter { margin-top: 14px; height: 3px; background: var(--line); border-radius: 9999px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 9999px; transition: width 1s cubic-bezier(.2,.7,.2,1); }
+.risk-tag { display: inline-block; margin-top: 12px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 9999px; padding: 2px 10px; }
+.verdict { margin-top: 18px; font-family: var(--serif); font-size: 20px; line-height: 1.2; }
+.verdict .label { display: block; margin-bottom: 6px; }
+.meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-family: var(--mono); font-size: 10.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 9999px; padding: 2px 8px; }
+
+.groups { margin-top: 22px; display: grid; gap: 8px; }
+.group { border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.015); }
+.group summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.group summary::-webkit-details-marker { display: none; }
+.group summary .dots { display: flex; gap: 4px; }
+.group summary .dots i { width: 6px; height: 6px; border-radius: 50%; }
+.group .rows { padding: 0 14px 8px; }
+.row { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.row small { display: block; color: var(--dim); font-size: 11.5px; word-break: break-word; }
+.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 7px; }
+.ok { background: var(--green); } .warn { background: var(--amber); } .bad { background: var(--bad); } .info { background: var(--dim); }
+.side-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.side-links a { border: 1px solid var(--line-2); border-radius: 9999px; padding: 6px 12px; font-size: 12px; }
+.side-links a:hover { border-color: var(--text); }
+.disclaimer { margin-top: 20px; font-size: 11.5px; color: var(--dim); }
+
+.side-empty h2 { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1; margin-top: 12px; }
+.side-empty p { color: var(--muted); margin-top: 14px; }
+.side-empty .btn { margin-top: 20px; }
+
+/* ---------- Map ---------- */
+.stage { position: relative; overflow: hidden; background: radial-gradient(70% 70% at 55% 42%, rgba(142,12,20,0.5) 0%, rgba(92,7,12,0.35) 35%, var(--ink) 80%); }
+.ghost { position: absolute; right: -6%; bottom: -12%; height: 105%; opacity: .07; pointer-events: none; user-select: none; mix-blend-mode: screen; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+.stage canvas.dragging { cursor: grabbing; }
+.stage canvas.pointing { cursor: pointer; }
+.grid-bg { position: absolute; inset: 0; pointer-events: none; opacity: .35;
+  background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 28px 28px; }
+
+.hud { position: absolute; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.hud-tl { top: 16px; left: 16px; }
+.hud-tl h1 { font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1; margin-top: 6px; }
+.hud-tl .sub { color: var(--muted); font-size: 12px; margin-top: 6px; font-family: var(--mono); }
+.hud-tr { top: 16px; right: 16px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; }
+.chip { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); border-radius: 9999px; padding: 5px 10px; background: var(--panel); backdrop-filter: blur(6px); cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; transition: color .2s, border-color .2s; }
+.chip i { width: 7px; height: 7px; border-radius: 50%; }
+.chip.on { color: var(--text); border-color: var(--muted); }
+.chip:hover { color: var(--text); }
+
+/* ---------- Key ---------- */
+.legend { position: absolute; left: 16px; bottom: 92px; width: 212px; z-index: 3; border-radius: 16px; padding: 6px;
+  background: linear-gradient(160deg, rgba(40,12,15,0.72), rgba(14,6,8,0.78)); backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 20px 50px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06); }
+.legend::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(140deg, rgba(255,255,255,0.22), rgba(255,90,95,0.18) 40%, rgba(255,255,255,0.04) 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.lg-head { width: 100%; display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 6px 8px 8px; cursor: pointer; text-align: left; }
+.lg-hint { flex: 1; font-size: 10.5px; color: var(--dim); opacity: 0; transition: opacity .3s; }
+.legend:hover .lg-hint { opacity: 1; }
+.lg-chev { color: var(--muted); transition: transform .35s cubic-bezier(.2,.7,.2,1); font-size: 13px; line-height: 1; }
+.legend.closed .lg-chev { transform: rotate(-90deg); }
+.lg-body { display: grid; gap: 1px; overflow: hidden; max-height: 420px; transition: max-height .45s cubic-bezier(.2,.7,.2,1), opacity .3s; }
+.legend.closed .lg-body { max-height: 0; opacity: 0; }
+.lg-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 9px; background: none; cursor: pointer;
+  font-size: 12px; color: var(--muted); text-align: left; transition: background .2s, color .2s, transform .25s cubic-bezier(.2,.7,.2,1);
+  opacity: 0; transform: translateX(-8px); }
+.legend.ready .lg-item { opacity: 1; transform: none; transition-delay: calc(var(--i) * 45ms); }
+.legend.ready .lg-item:hover { transition-delay: 0s; transform: translateX(3px); }
+.lg-item span { flex: 1; }
+.lg-item b { font-family: var(--mono); font-weight: 400; font-size: 10.5px; color: var(--dim); min-width: 2ch; text-align: right; transition: color .2s; }
+.lg-item:hover, .lg-item.on { background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--text); }
+.lg-item:hover b, .lg-item.on b { color: var(--c); }
+.lg-item.on { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent); }
+.lg-item.zero { opacity: .38 !important; }
+.lg-sep { height: 1px; margin: 5px 8px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent); }
+
+/* swatches */
+.sw { position: relative; width: 10px; height: 10px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 32% 30%, #fff 0 12%, var(--c) 40%, color-mix(in srgb, var(--c) 45%, #000) 100%);
+  animation: breathe 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * -0.4s); }
+@keyframes breathe { 50% { transform: scale(.82); } }
+.sw-glow { box-shadow: 0 0 10px 1px color-mix(in srgb, var(--c) 70%, transparent); }
+.sw-ring::after, .sw-orbit::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--c); }
+.sw-ring::after { animation: ping 1.8s cubic-bezier(0,.6,.4,1) infinite; }
+@keyframes ping { from { transform: scale(.6); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+.sw-orbit::after { border-style: dashed; animation: spin 6s linear infinite; }
+@keyframes spin { to { transform: rotate(1turn); } }
+.sw-blink { animation: blink 1.4s steps(2, jump-none) infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+.ln { width: 18px; height: 2px; flex: none; border-radius: 2px; margin: 0 -4px;
+  background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 8px); background-size: 16px 2px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--c) 60%, transparent); animation: flow 0.7s linear infinite; }
+.ln-rev { animation-direction: reverse; }
+@keyframes flow { to { background-position: 16px 0; } }
+@media (max-width: 700px) { .legend { bottom: 84px; width: 180px; } }
+
+.replay { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; padding: 10px 14px; }
+.play { width: 38px; height: 38px; border-radius: 50%; background: var(--text); color: var(--ink); border: 0; cursor: pointer; display: grid; place-items: center; flex: none; transition: transform .15s; }
+.play:hover { transform: scale(1.06); }
+.play svg { width: 14px; height: 14px; }
+.timeline { flex: 1; display: grid; gap: 6px; min-width: 0; }
+.tl-top { display: flex; justify-content: space-between; gap: 12px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: .06em; }
+.tl-top b { color: var(--text); font-weight: 400; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: none; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--bad) var(--p, 0%), var(--line-2) var(--p, 0%)); }
+input[type=range]::-moz-range-track { height: 3px; border-radius: 3px; background: var(--line-2); }
+input[type=range]::-moz-range-progress { height: 3px; background: var(--bad); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--text); margin-top: -5px; box-shadow: 0 0 0 4px rgba(255,90,95,.25); }
+input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; border-radius: 50%; background: var(--text); }
+.speed { display: flex; gap: 4px; }
+.speed button { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line-2); background: none; border-radius: 9999px; padding: 4px 8px; cursor: pointer; color: var(--muted); }
+.speed button.on { color: var(--ink); background: var(--text); border-color: var(--text); }
+@media (max-width: 560px) { .speed { display: none; } }
+
+.tip { position: absolute; pointer-events: none; background: rgba(26,8,10,.95); border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; padding: 10px 12px; font-size: 12px; min-width: 180px; transform: translate(14px, 14px); opacity: 0; transition: opacity .15s; z-index: 5; }
+.tip.show { opacity: 1; }
+.tip b { display: block; font-weight: 500; font-size: 13px; }
+.tip .mono { font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
+.tip .kv { display: flex; justify-content: space-between; gap: 16px; margin-top: 4px; color: var(--muted); }
+.tip .kv span:last-child { color: var(--text); font-family: var(--mono); font-size: 11px; }
+
+.panel { position: absolute; top: 108px; right: 16px; width: 300px; max-height: calc(100% - 210px); overflow-y: auto; background: rgba(24,8,10,.95); backdrop-filter: blur(10px); border: 1px solid var(--line-2); border-radius: 14px; padding: 18px; transform: translateX(calc(100% + 32px)); transition: transform .45s cubic-bezier(.2,.7,.2,1); z-index: 6; }
+.panel.open { transform: none; }
+.panel .close { position: absolute; top: 12px; right: 12px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); background: none; cursor: pointer; color: var(--muted); }
+.panel h3 { font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.05; margin-top: 8px; padding-right: 30px; }
+.panel .addr { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; margin-top: 6px; cursor: pointer; }
+.panel .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 14px; }
+.panel .stats div { background: #1c0a0c; padding: 10px 12px; }
+.panel .stats b { display: block; font-family: var(--serif); font-weight: 400; font-size: 24px; }
+.panel .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.panel .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; border-radius: 9999px; padding: 2px 8px; border: 1px solid; }
+.panel h4 { margin-top: 18px; }
+.panel .cp { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; cursor: pointer; }
+.panel .cp:hover { color: #fff; }
+.panel .cp span:last-child { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.panel .ext { display: inline-block; margin-top: 16px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 9999px; padding: 6px 12px; }
+
+/* loading + empty overlays */
+.overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transition: opacity .5s; z-index: 4; }
+.overlay.hide { opacity: 0; pointer-events: none; }
+/* loader: the current step large, the rest as a quiet checklist */
+.loader { width: min(420px, 86%); text-align: left; }
+.loader .now { font-family: var(--serif); font-size: 44px; line-height: 1.05; margin-top: 12px; min-height: 2.1em; }
+.loader .now span { display: inline-block; animation: step-in .5s cubic-bezier(.2,.7,.2,1); }
+@keyframes step-in { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
+.loader .bar { height: 1px; background: rgba(255,255,255,0.12); margin: 18px 0 16px; position: relative; overflow: hidden; }
+.loader .bar i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--bad); transition: width .8s cubic-bezier(.2,.7,.2,1); }
+.loader ol { list-style: none; display: grid; gap: 7px; }
+.loader li { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); transition: color .3s; }
+.loader li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; border: 1px solid currentColor; flex: none; }
+.loader li.done { color: var(--muted); }
+.loader li.done::before { background: var(--muted); border-color: var(--muted); }
+.loader li.on { color: var(--text); }
+.loader li.on::before { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 10px var(--bad); }
+.loader .hint { color: var(--dim); margin-top: 18px; font-size: 12px; }
+.loader.failed .now { color: #ffb4b6; font-size: 30px; }
+.overlay .hint { color: var(--muted); margin-top: 8px; font-size: 13px; }
+.overlay h2 { font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: 1; }
+.overlay .err { color: #ffb4b6; margin-top: 10px; }
+
+@media (prefers-reduced-motion: reduce) { .loader .now span, .sw, .sw::after, .ln { animation: none !important; } .lg-item { opacity: 1 !important; transform: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="/"><img class="logo" src="/assets/logo.webp" alt="" width="32" height="32">TELL</a>
+  <span class="label brand-tag">App</span>
+  <form class="search" id="form">
+    <input id="q" placeholder="0x… token address or DexScreener link" autocomplete="off" spellcheck="false">
+    <button class="btn btn-cream" type="submit">Map it →</button>
+  </form>
+  <a class="back" href="/">← Back to site</a>
+</header>
+
+<div class="layout">
+  <aside class="side" id="side">
+    <div class="side-empty">
+      <span class="label">Token map</span>
+      <h2>Watch where the <em>supply goes.</em></h2>
+      <p>Paste a token on Robinhood Chain. Tell maps every transfer since launch: pools, the deployer, linked wallets and snipers, then replays it block by block.</p>
+      <button class="btn btn-line" type="button" id="example">Try a live example →</button>
+    </div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <img class="ghost" src="/assets/statue.webp" alt="">
+    <div class="grid-bg"></div>
+    <canvas id="canvas"></canvas>
+
+    <div class="overlay" id="empty">
+      <div>
+        <span class="label">Tell · App</span>
+        <h2 style="margin-top:14px">No token <em>yet.</em></h2>
+        <p class="hint">Paste an address above to draw its map.</p>
+      </div>
+    </div>
+    <div class="overlay hide" id="loading">
+      <div class="loader" id="loader">
+        <span class="label">Tell is reading the token</span>
+        <div class="now" id="step"><span>Reading contract</span></div>
+        <div class="bar"><i id="bar"></i></div>
+        <ol id="steps"></ol>
+        <p class="hint">Fresh launches take about 10 seconds, busy tokens up to 30.</p>
+      </div>
+    </div>
+
+    <div class="hud hud-tl">
+      <span class="label">Token map</span>
+      <h1 id="map-title">—</h1>
+      <div class="sub" id="map-sub"></div>
+    </div>
+    <div class="hud hud-tr" id="chips">
+      <button class="chip on" data-f="particles"><i style="background:var(--pale)"></i>Flow</button>
+      <button class="chip on" data-f="labels">Labels</button>
+      <button class="chip" data-f="clusters"><i style="background:var(--amber)"></i>Linked</button>
+      <button class="chip" data-f="snipers"><i style="background:var(--violet)"></i>Snipers</button>
+      <button class="chip" data-f="others">Others</button>
+      <button class="chip" data-f="fit">Fit ⤢</button>
+    </div>
+
+    <div class="legend" id="legend">
+      <button class="lg-head" id="lg-toggle" aria-expanded="true">
+        <span class="label">Key</span><span class="lg-hint">hover to highlight</span><span class="lg-chev">⌄</span>
+      </button>
+      <div class="lg-body">
+        <button class="lg-item" data-k="mint" style="--c:#ece9e2"><i class="sw"></i><span>Mint</span><b data-n="mint">—</b></button>
+        <button class="lg-item" data-k="pool" style="--c:#d6e4f6"><i class="sw sw-glow"></i><span>Pool / DEX</span><b data-n="pool">—</b></button>
+        <button class="lg-item" data-k="contract" style="--c:#5f86a6"><i class="sw"></i><span>Contract</span><b data-n="contract">—</b></button>
+        <button class="lg-item" data-k="deployer" style="--c:#ff5a5f"><i class="sw sw-ring"></i><span>Deployer</span><b data-n="deployer">—</b></button>
+        <button class="lg-item" data-k="wallet" style="--c:#9a958d"><i class="sw"></i><span>Wallet</span><b data-n="wallet">—</b></button>
+        <button class="lg-item" data-k="cluster" style="--c:#e3a540"><i class="sw sw-orbit"></i><span>Linked</span><b data-n="cluster">—</b></button>
+        <button class="lg-item" data-k="sniper" style="--c:#9d8cff"><i class="sw sw-blink"></i><span>Sniper</span><b data-n="sniper">—</b></button>
+        <div class="lg-sep"></div>
+        <button class="lg-item" data-f="buy" style="--c:#4fb27a"><i class="ln"></i><span>Buys</span><b data-n="buy">—</b></button>
+        <button class="lg-item" data-f="sell" style="--c:#ff5a5f"><i class="ln ln-rev"></i><span>Sells</span><b data-n="sell">—</b></button>
+      </div>
+    </div>
+
+    <div class="replay">
+      <button class="play" id="play" aria-label="Play launch replay">
+        <svg viewBox="0 0 16 16" id="play-icon"><path d="M3 1.5v13l11-6.5z" fill="currentColor"/></svg>
+      </button>
+      <div class="timeline">
+        <div class="tl-top"><span>Launch replay · <b id="tl-block">block 0</b></span><span id="tl-count">0 transfers</span></div>
+        <input type="range" id="tl" min="0" max="1000" value="1000">
+      </div>
+      <div class="speed" id="speed">
+        <button data-s="1">1×</button><button data-s="4" class="on">4×</button><button data-s="16">16×</button>
+      </div>
+    </div>
+
+    <div class="tip" id="tip"></div>
+    <div class="panel" id="panel"></div>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const short = a => a.slice(0, 6) + '…' + a.slice(-4);
+const usd = n => n >= 1e6 ? '$' + (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(1) + 'k' : '$' + Math.round(n);
+const pctf = v => v === 0 ? '0%' : v < 0.01 ? '<0.01%' : v < 10 ? v.toFixed(2) + '%' : v.toFixed(1) + '%';
+const tone = v => v >= 80 ? 'bad' : v >= 60 ? 'warn' : v >= 30 ? 'mid' : 'ok';
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SAMPLE = '0x45970840b4fcf5B97a258B3c623e3EEd48581bA3';
+
+const COLORS = {
+  mint: '#ece9e2', burn: '#5f5b55', pool: '#d6e4f6', contract: '#5f86a6',
+  deployer: '#ff5a5f', wallet: '#9a958d', others: '#3a3836', cluster: '#e3a540', sniper: '#9d8cff',
+};
+const nodeColor = n => n.kind === 'wallet' && n.cluster ? COLORS.cluster : n.kind === 'wallet' && n.sniper ? COLORS.sniper : COLORS[n.kind];
+
+/* ================= Loading the report ================= */
+
+const STEPS = ['Reading contract', 'Loading transfer history', 'Mapping holders', 'Tracing the deployer', 'Reading the website', 'AI is writing the verdict', 'Drawing the map'];
+
+$('form').addEventListener('submit', e => { e.preventDefault(); load($('q').value.trim()); });
+$('example').onclick = () => { $('q').value = SAMPLE; load(SAMPLE); };
+
+async function load(q) {
+  if (!q) { $('q').focus(); return; }
+  $('empty').classList.add('hide');
+  $('loading').classList.remove('hide');
+  $('loading').querySelector('.err')?.remove();
+  $('loader').classList.remove('failed');
+  $('steps').innerHTML = STEPS.map(s => `<li>${s}</li>`).join('');
+  let i = 0;
+  showStep(0);
+  const ticker = setInterval(() => showStep(Math.min(++i, STEPS.length - 1)), 2200);
+  try {
+    const res = await fetch('/api/check?flow=1&q=' + encodeURIComponent(q));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Check failed');
+    history.replaceState(null, '', '/app/' + data.token.address);
+    renderSide(data);
+    if (data.flow) {
+      startMap(data);
+      $('loading').classList.add('hide');
+    } else {
+      throw new Error('This token has too much history to map. The report on the left still applies.');
+    }
+  } catch (err) {
+    const p = document.createElement('p');
+    p.className = 'err';
+    p.textContent = err.message;
+    $('step').innerHTML = '<span>Could not map this token</span>';
+    $('loader').classList.add('failed');
+    $('loader').appendChild(p);
+  } finally {
+    clearInterval(ticker);
+  }
+}
+
+// the step list is a pacing guide, not a progress report: the server answers once, at the end
+function showStep(k) {
+  $('step').innerHTML = `<span>${STEPS[k]}</span>`;
+  [...$('steps').children].forEach((li, j) => { li.className = j < k ? 'done' : j === k ? 'on' : ''; });
+  $('bar').style.width = Math.round(((k + 0.5) / STEPS.length) * 100) + '%';
+}
+
+function renderSide(r) {
+  const pair = r.pairs[0];
+  const t = tone(r.score.value);
+  const sym = r.token.symbol ? '$' + r.token.symbol : short(r.token.address);
+  const img = r.meta?.image || pair?.info?.imageUrl;
+  const site = pair?.info?.websites?.[0]?.url || r.meta?.website;
+  const socials = pair?.info?.socials?.length ? pair.info.socials : r.meta?.socials || [];
+  const meta = [];
+  if (r.facts?.holders) meta.push(r.facts.holders.toLocaleString('en-US') + ' holders');
+  if (pair?.liquidity?.usd) meta.push('liq. ' + usd(pair.liquidity.usd));
+  if (pair?.marketCap) meta.push('mcap ' + usd(pair.marketCap));
+  if (pair?.volume?.h24) meta.push('24h ' + usd(pair.volume.h24));
+
+  const GROUPS = [['contract', 'Contract'], ['holders', 'Holders'], ['deployer', 'Deployer'], ['website', 'Website & socials'], ['market', 'Market']];
+  const groups = GROUPS.map(([id, title], gi) => {
+    const items = r.checks.filter(c => c.group === id);
+    if (!items.length) return '';
+    const worst = items.some(c => c.status === 'bad') || items.some(c => c.status === 'warn');
+    return `<details class="group"${worst || gi === 0 ? ' open' : ''}><summary>${title}<span class="dots">${items.map(c => `<i class="${c.status}"></i>`).join('')}</span></summary>
+      <div class="rows">${items.map(c => `<div class="row"><i class="dot ${c.status}"></i><div>${esc(c.title)}${c.detail ? `<small>${esc(c.detail)}</small>` : ''}</div></div>`).join('')}</div></details>`;
+  }).join('');
+
+  $('side').innerHTML = `
+    <div class="t-${t}">
+      <div class="tk">
+        <div class="tk-ava">${img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : ''}</div>
+        <div>
+          <div class="tk-name">${esc(sym)}${r.token.name ? `<span class="tk-full">${esc(r.token.name)}</span>` : ''}</div>
+          <div class="tk-addr" title="Copy address" data-copy="${r.token.address}">${short(r.token.address)} ⧉</div>
+        </div>
+      </div>
+      ${r.meta?.description ? `<p class="tk-desc">${esc(r.meta.description)}</p>` : ''}
+      <div class="score"><b id="score-n">0</b><span>/ 100 risk</span></div>
+      <div class="meter"><i id="meter"></i></div>
+      <span class="risk-tag">${esc(r.score.label)}</span>
+      <div class="verdict"><span class="label">${r.aiVerdict ? 'AI verdict' : 'Verdict'}</span>${esc(r.verdict)}</div>
+      <div class="meta">${meta.map(m => `<span class="badge">${esc(m)}</span>`).join('')}</div>
+    </div>
+    <div class="groups">${groups}</div>
+    <div class="side-links">
+      ${site ? `<a href="${esc(site)}" target="_blank" rel="noopener nofollow">Website ↗</a>` : ''}
+      ${socials.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener nofollow">${esc(x.type === 'twitter' ? 'X' : x.type[0].toUpperCase() + x.type.slice(1))} ↗</a>`).join('')}
+      ${pair ? `<a href="${esc(pair.url)}" target="_blank" rel="noopener">DexScreener ↗</a>` : ''}
+      <a href="https://robinhoodchain.blockscout.com/token/${r.token.address}" target="_blank" rel="noopener">Explorer ↗</a>
+      <a href="/t/${r.token.address}">Full report</a>
+    </div>
+    <p class="disclaimer">Not financial advice. Tell describes what it finds and can be wrong.</p>`;
+
+  requestAnimationFrame(() => { $('meter').style.width = Math.max(r.score.value, 3) + '%'; });
+  countUp($('score-n'), r.score.value, 1000);
+  $('side').querySelectorAll('[data-copy]').forEach(el => el.onclick = () => navigator.clipboard?.writeText(el.dataset.copy));
+  $('side').scrollTop = 0;
+}
+
+function countUp(el, to, ms) {
+  const start = performance.now();
+  const step = now => {
+    const p = Math.min((now - start) / ms, 1);
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ================= The map ================= */
+
+const canvas = $('canvas');
+const ctx = canvas.getContext('2d');
+const stage = $('stage');
+let W = 0, H = 0, DPR = 1;
+let G = null;            // { nodes, links, events, ... }
+let sim = null;
+let transform = d3.zoomIdentity;
+let hover = null, selected = null;
+const filters = { particles: true, labels: true, clusters: false, snipers: false, others: false };
+const particles = [];
+const flashes = new Map(); // node -> time of last hit
+
+const replay = { playing: false, speed: 4, cursor: 0, block: 0, lastBlock: 0, balances: null };
+
+function resize() {
+  const r = stage.getBoundingClientRect();
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+}
+addEventListener('resize', () => { resize(); if (sim) sim.alpha(0.2).restart(); });
+resize();
+
+function radius(n, bal) {
+  const b = bal ?? n.balance;
+  const base = n.kind === 'others' ? 18 : n.kind === 'mint' ? 12 : 5;
+  return base + Math.sqrt(Math.max(b, n.kind === 'wallet' ? 0 : n.volume * 0.004)) * 4.2;
+}
+
+function startMap(r) {
+  const f = r.flow;
+  const nodes = f.nodes.map((n, i) => ({ ...n, i }));
+  const links = f.edges.map(([s, t, v, c]) => ({ source: s, target: t, v, c }));
+  G = { nodes, links, events: f.events, total: f.totalEvents, lastBlock: f.events.length ? f.events[f.events.length - 1][0] : 0 };
+
+  $('map-title').textContent = r.token.symbol ? '$' + r.token.symbol : short(r.token.address);
+  $('map-sub').textContent = `${nodes.length - 1} addresses · ${f.totalEvents.toLocaleString('en-US')} transfers`;
+  particles.length = 0;
+  selected = null; $('panel').classList.remove('open');
+
+  // seed positions: mint on the left, pools in the middle, everything else on a ring
+  nodes.forEach((n, k) => {
+    const a = (k / nodes.length) * Math.PI * 2;
+    if (n.kind === 'mint') { n.x = -260; n.y = 0; }
+    else if (n.kind === 'pool') { n.x = 0; n.y = 0; }
+    else { n.x = Math.cos(a) * 240; n.y = Math.sin(a) * 240; }
+  });
+
+  if (sim) sim.stop();
+  const maxV = d3.max(links, l => l.v) || 1;
+  sim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).distance(l => 70 + 90 * (1 - Math.sqrt(l.v / maxV))).strength(l => 0.08 + 0.5 * Math.sqrt(l.v / maxV)))
+    .force('charge', d3.forceManyBody().strength(n => n.kind === 'wallet' ? -60 : -260))
+    .force('collide', d3.forceCollide(n => radius(n) + 4))
+    .force('x', d3.forceX(n => n.kind === 'mint' ? -200 : 0).strength(n => n.kind === 'mint' ? 0.15 : 0.03))
+    .force('y', d3.forceY(0).strength(0.04))
+    .alphaDecay(0.02)
+    .on('tick', () => { if (!fitted && sim.alpha() < 0.25) { fitted = true; fit(true); } });
+  fitted = false;
+
+  replayReset(true);
+  keyPinned = null; setKey(null);
+  updateKey();
+  transform = d3.zoomIdentity.translate(W / 2, H / 2).scale(0.9);
+  d3.select(canvas).call(zoom.transform, transform);
+}
+let fitted = false;
+
+function fit(animate) {
+  if (!G) return;
+  const vis = G.nodes.filter(visible);
+  const [x0, x1] = d3.extent(vis, n => n.x), [y0, y1] = d3.extent(vis, n => n.y);
+  const pad = 80;
+  const k = Math.min(2.2, 0.92 * Math.min((W - pad * 2) / (x1 - x0 || 1), (H - 190) / (y1 - y0 || 1)));
+  const t = d3.zoomIdentity.translate(W / 2 - k * (x0 + x1) / 2, (H - 70) / 2 - k * (y0 + y1) / 2).scale(k);
+  d3.select(canvas).transition().duration(animate && !calm ? 900 : 0).call(zoom.transform, t);
+}
+
+const visible = n => filters.others || n.kind !== 'others';
+
+/* ---- interaction ---- */
+const zoom = d3.zoom().scaleExtent([0.2, 6])
+  .filter(e => !(e.type === 'mousedown' && nodeAt(e.offsetX, e.offsetY)) && !e.button)
+  .on('zoom', e => { transform = e.transform; });
+d3.select(canvas).call(zoom).on('dblclick.zoom', null);
+
+function nodeAt(px, py) {
+  if (!G) return null;
+  const [x, y] = transform.invert([px, py]);
+  let best = null, bd = Infinity;
+  for (const n of G.nodes) {
+    if (!visible(n)) continue;
+    const d = Math.hypot(n.x - x, n.y - y), r = radius(n, replayBal(n)) + 3;
+    if (d < r && d < bd) { best = n; bd = d; }
+  }
+  return best;
+}
+
+d3.select(canvas).call(d3.drag()
+  .subject(e => { const n = nodeAt(e.sourceEvent.offsetX, e.sourceEvent.offsetY); return n ? n : null; })
+  .on('start', e => { canvas.classList.add('dragging'); if (!e.active) sim.alphaTarget(0.25).restart(); e.subject.fx = e.subject.x; e.subject.fy = e.subject.y; })
+  .on('drag', e => { const [x, y] = transform.invert([e.sourceEvent.offsetX, e.sourceEvent.offsetY]); e.subject.fx = x; e.subject.fy = y; })
+  .on('end', e => { canvas.classList.remove('dragging'); if (!e.active) sim.alphaTarget(0); e.subject.fx = null; e.subject.fy = null; }));
+
+canvas.addEventListener('pointermove', e => {
+  const n = nodeAt(e.offsetX, e.offsetY);
+  hover = n;
+  canvas.classList.toggle('pointing', !!n);
+  const tip = $('tip');
+  if (!n) { tip.classList.remove('show'); return; }
+  tip.innerHTML = `<b>${esc(n.label)}</b>${n.kind === 'others' ? '' : `<div class="mono">${n.id === 'others' ? '' : esc(n.id)}</div>`}
+    <div class="kv"><span>Holds</span><span>${pctf(replay.balances && !replay.done ? Math.max(replayBal(n), 0) : n.balance)}</span></div>
+    <div class="kv"><span>Moved</span><span>${pctf(n.volume)}</span></div>
+    ${n.cluster ? `<div class="kv"><span>Linked group</span><span>#${n.cluster}</span></div>` : ''}
+    ${n.sniper ? `<div class="kv"><span>Sniper</span><span>first 3 blocks</span></div>` : ''}`;
+  const r = stage.getBoundingClientRect();
+  const x = Math.min(e.clientX - r.left, W - 220), y = Math.min(e.clientY - r.top, H - 140);
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  tip.classList.add('show');
+});
+canvas.addEventListener('pointerleave', () => { hover = null; $('tip').classList.remove('show'); });
+canvas.addEventListener('click', e => {
+  const n = nodeAt(e.offsetX, e.offsetY);
+  if (n) openPanel(n); else { selected = null; $('panel').classList.remove('open'); }
+});
+
+function openPanel(n) {
+  selected = n;
+  const flows = new Map();
+  for (const l of G.links) {
+    if (l.source === n) flows.set(l.target, { out: (flows.get(l.target)?.out || 0) + l.v, in: flows.get(l.target)?.in || 0 });
+    if (l.target === n) flows.set(l.source, { in: (flows.get(l.source)?.in || 0) + l.v, out: flows.get(l.source)?.out || 0 });
+  }
+  const top = [...flows].sort((a, b) => (b[1].in + b[1].out) - (a[1].in + a[1].out)).slice(0, 8);
+  const tags = [];
+  tags.push([n.kind === 'others' ? 'aggregate' : n.kind, nodeColor(n)]);
+  if (n.cluster) tags.push(['linked group #' + n.cluster, COLORS.cluster]);
+  if (n.sniper) tags.push(['sniper', COLORS.sniper]);
+  $('panel').innerHTML = `
+    <button class="close" aria-label="Close">×</button>
+    <span class="label">${n.kind === 'others' ? 'Everyone else' : 'Address'}</span>
+    <h3>${esc(n.label)}</h3>
+    ${n.kind !== 'others' ? `<div class="addr" data-copy="${n.id}">${n.id} ⧉</div>` : ''}
+    <div class="tags">${tags.map(([t, c]) => `<span class="tag" style="color:${c};border-color:${c}55">${esc(t)}</span>`).join('')}</div>
+    <div class="stats"><div><span class="label">Holds</span><b>${pctf(n.balance)}</b></div><div><span class="label">Moved</span><b>${pctf(n.volume)}</b></div></div>
+    <h4 class="label">Biggest counterparties</h4>
+    ${top.map(([o, f]) => `<div class="cp" data-i="${o.i}"><span>${esc(o.label)}</span><span>${f.in ? '← ' + pctf(f.in) : ''} ${f.out ? '→ ' + pctf(f.out) : ''}</span></div>`).join('') || '<p class="hint">No transfers with mapped addresses.</p>'}
+    ${n.kind !== 'others' && n.kind !== 'mint' ? `<a class="ext" href="https://robinhoodchain.blockscout.com/address/${n.id}" target="_blank" rel="noopener">Open in explorer ↗</a>` : ''}`;
+  $('panel').classList.add('open');
+  $('panel').querySelector('.close').onclick = () => { selected = null; $('panel').classList.remove('open'); };
+  $('panel').querySelectorAll('[data-copy]').forEach(el => el.onclick = () => navigator.clipboard?.writeText(el.dataset.copy));
+  $('panel').querySelectorAll('.cp').forEach(el => el.onclick = () => {
+    const o = G.nodes[+el.dataset.i];
+    openPanel(o);
+    d3.select(canvas).transition().duration(calm ? 0 : 700).call(zoom.translateTo, o.x, o.y);
+  });
+}
+
+$('chips').addEventListener('click', e => {
+  const b = e.target.closest('.chip');
+  if (!b) return;
+  const f = b.dataset.f;
+  if (f === 'fit') return fit(true);
+  filters[f] = !filters[f];
+  b.classList.toggle('on', filters[f]);
+  if (f === 'others' && sim) sim.alpha(0.3).restart();
+});
+
+/* ---- replay ---- */
+function replayReset(toEnd) {
+  replay.cursor = toEnd ? (G ? G.events.length : 0) : 0;
+  replay.block = toEnd ? replay.lastBlock : 0;
+  replay.lastBlock = G ? G.lastBlock : 0;
+  if (toEnd) replay.block = replay.lastBlock;
+  replay.balances = G ? new Float64Array(G.nodes.length) : null;
+  replay.done = toEnd;
+  if (toEnd && G) G.nodes.forEach((n, i) => { replay.balances[i] = n.balance; });
+  syncTimeline();
+}
+const replayBal = n => replay.balances && !replay.done ? replay.balances[n.i] : n.balance;
+
+function applyEvent(ev, spawn) {
+  const [, s, d, v] = ev;
+  replay.balances[s] -= v; replay.balances[d] += v;
+  if (spawn) {
+    spawnParticle(G.nodes[s], G.nodes[d], v, true);
+    flashes.set(G.nodes[d], performance.now());
+  }
+}
+
+function seek(block) {
+  if (!G) return;
+  replay.balances.fill(0);
+  replay.cursor = 0;
+  while (replay.cursor < G.events.length && G.events[replay.cursor][0] <= block) applyEvent(G.events[replay.cursor++], false);
+  replay.block = block;
+  replay.done = replay.cursor >= G.events.length && !replay.playing;
+  if (replay.done) G.nodes.forEach((n, i) => { replay.balances[i] = n.balance; });
+  syncTimeline();
+}
+
+function syncTimeline() {
+  const tl = $('tl');
+  const p = replay.lastBlock ? replay.block / replay.lastBlock : 1;
+  tl.value = Math.round(p * 1000);
+  tl.style.setProperty('--p', (p * 100) + '%');
+  $('tl-block').textContent = 'block +' + Math.round(replay.block).toLocaleString('en-US');
+  const shown = G ? Math.round((replay.cursor / Math.max(G.events.length, 1)) * G.total) : 0;
+  $('tl-count').textContent = shown.toLocaleString('en-US') + ' / ' + (G ? G.total.toLocaleString('en-US') : 0) + ' transfers';
+}
+
+function setPlaying(on) {
+  replay.playing = on;
+  $('play-icon').innerHTML = on ? '<path d="M3 1.5h3.5v13H3zM9.5 1.5H13v13H9.5z" fill="currentColor"/>' : '<path d="M3 1.5v13l11-6.5z" fill="currentColor"/>';
+  $('play').setAttribute('aria-label', on ? 'Pause replay' : 'Play launch replay');
+}
+
+$('play').onclick = () => {
+  if (!G) return;
+  if (!replay.playing && (replay.done || replay.cursor >= G.events.length)) { replay.balances.fill(0); replay.cursor = 0; replay.block = 0; replay.done = false; }
+  setPlaying(!replay.playing);
+};
+$('tl').addEventListener('input', e => { if (!G) return; setPlaying(false); seek((+e.target.value / 1000) * replay.lastBlock); });
+$('speed').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  replay.speed = +b.dataset.s;
+  $('speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+});
+addEventListener('keydown', e => { if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); $('play').click(); } });
+
+/* ---- particles ---- */
+function spawnParticle(a, b, v, big) {
+  if (!filters.particles || calm || !visible(a) || !visible(b)) return;
+  if (particles.length > 900) particles.shift();
+  const flow = flowOf(a, b);
+  const color = { buy: '#4fb27a', sell: '#ff5a5f', mint: '#ece9e2', move: '#d6e4f6' }[flow];
+  particles.push({ a, b, t: 0, flow, speed: (big ? 0.012 : 0.006) * (0.7 + Math.random() * 0.6), size: big ? 1.6 + Math.min(Math.sqrt(v) * 1.4, 4) : 1.1 + Math.random() * 0.9, color, bend: (Math.random() - 0.5) * 0.35 });
+}
+const isMarket = n => n.kind === 'pool' || n.kind === 'contract';
+const flowOf = (a, b) => isMarket(a) && !isMarket(b) ? 'buy' : isMarket(b) && !isMarket(a) ? 'sell' : a.kind === 'mint' ? 'mint' : 'move';
+
+/* ---- key: counts, hover highlight, click to pin ---- */
+let keyFocus = null;   // { k: kind } or { f: 'buy' | 'sell' }
+let keyPinned = null;
+const legend = $('legend');
+const kindOf = n => n.kind === 'wallet' && n.cluster ? 'cluster' : n.kind === 'wallet' && n.sniper ? 'sniper' : n.kind;
+const inKey = n => keyFocus && keyFocus.k && (keyFocus.k === 'cluster' ? !!n.cluster : keyFocus.k === 'sniper' ? !!n.sniper : kindOf(n) === keyFocus.k);
+legend.querySelectorAll('.lg-item').forEach((el, i) => el.style.setProperty('--i', i));
+
+function updateKey() {
+  const n = { mint: 0, pool: 0, contract: 0, deployer: 0, wallet: 0, cluster: 0, sniper: 0, buy: 0, sell: 0 };
+  for (const x of G.nodes) {
+    if (x.kind === 'others') continue;
+    n[kindOf(x)] = (n[kindOf(x)] || 0) + 1;
+    if (x.cluster && kindOf(x) !== 'cluster') n.cluster++;
+  }
+  for (const l of G.links) { const f = flowOf(l.source, l.target); if (f === 'buy' || f === 'sell') n[f] += l.c; }
+  legend.querySelectorAll('[data-n]').forEach(b => {
+    const v = n[b.dataset.n] || 0;
+    b.textContent = v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v;
+    b.closest('.lg-item').classList.toggle('zero', v === 0);
+  });
+  legend.classList.remove('ready');
+  requestAnimationFrame(() => requestAnimationFrame(() => legend.classList.add('ready')));
+}
+
+function setKey(target) {
+  keyFocus = target;
+  legend.querySelectorAll('.lg-item').forEach(el => el.classList.toggle('on',
+    !!keyPinned && ((keyPinned.k && el.dataset.k === keyPinned.k) || (keyPinned.f && el.dataset.f === keyPinned.f))));
+}
+legend.querySelectorAll('.lg-item').forEach(el => {
+  const t = () => (el.dataset.k ? { k: el.dataset.k } : { f: el.dataset.f });
+  el.addEventListener('mouseenter', () => setKey(t()));
+  el.addEventListener('mouseleave', () => setKey(keyPinned));
+  el.addEventListener('click', () => {
+    const v = t();
+    keyPinned = keyPinned && keyPinned.k === v.k && keyPinned.f === v.f ? null : v;
+    setKey(keyPinned);
+  });
+});
+$('lg-toggle').onclick = () => {
+  const closed = legend.classList.toggle('closed');
+  $('lg-toggle').setAttribute('aria-expanded', String(!closed));
+};
+if (innerWidth < 700) legend.classList.add('closed');
+
+function ambient() {
+  if (!G || replay.playing || !filters.particles || calm) return;
+  for (const l of G.links) {
+    if (!visible(l.source) || !visible(l.target)) continue;
+    if (Math.random() < 0.004 + Math.min(Math.log10(l.c + 1) * 0.01, 0.05)) spawnParticle(l.source, l.target, l.v, false);
+  }
+}
+
+/* ---- render loop ---- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(now - last, 50); last = now;
+  if (G && replay.playing) {
+    // a full replay lasts ~45s at 1x
+    replay.block += (replay.lastBlock / 45000) * dt * replay.speed;
+    let spawned = 0;
+    while (replay.cursor < G.events.length && G.events[replay.cursor][0] <= replay.block) {
+      applyEvent(G.events[replay.cursor++], spawned++ < 25);
+    }
+    if (replay.cursor >= G.events.length) { replay.block = replay.lastBlock; setPlaying(false); replay.done = true; G.nodes.forEach((n, i) => { replay.balances[i] = n.balance; }); }
+    syncTimeline();
+  }
+  ambient();
+  draw(now, dt);
+  requestAnimationFrame(frame);
+}
+
+function curve(a, b, bend) {
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y;
+  return [mx - dy * bend, my + dx * bend];
+}
+
+function draw(now, dt) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (!G) return;
+  ctx.save();
+  ctx.translate(transform.x, transform.y);
+  ctx.scale(transform.k, transform.k);
+
+  const focus = selected || hover;
+  const linked = focus ? new Set(G.links.filter(l => l.source === focus || l.target === focus).flatMap(l => [l.source, l.target])) : null;
+  const dimmed = n => (focus && !linked.has(n) && n !== focus)
+    || (filters.clusters && !n.cluster && n.kind === 'wallet') || (filters.snipers && !n.sniper && n.kind === 'wallet')
+    || (keyFocus?.k && !inKey(n))
+    || (keyFocus?.f && n.kind !== 'pool' && n.kind !== 'contract' && !G.links.some(l => (l.source === n || l.target === n) && flowOf(l.source, l.target) === keyFocus.f));
+  const maxV = Math.log10(d3.max(G.links, l => l.v) + 1) || 1;
+
+  // edges
+  for (const l of G.links) {
+    const a = l.source, b = l.target;
+    if (!visible(a) || !visible(b)) continue;
+    const on = focus && (a === focus || b === focus);
+    const w = 0.4 + 2.6 * (Math.log10(l.v + 1) / maxV);
+    const flow = keyFocus?.f ? flowOf(a, b) : null;
+    const keyOn = keyFocus && ((keyFocus.k && (inKey(a) || inKey(b))) || (keyFocus.f && flow === keyFocus.f));
+    ctx.strokeStyle = on ? 'rgba(236,233,226,0.55)'
+      : focus ? 'rgba(255,255,255,0.03)'
+      : keyFocus ? (keyOn ? (keyFocus.f === 'buy' ? 'rgba(79,178,122,0.6)' : keyFocus.f === 'sell' ? 'rgba(255,90,95,0.6)' : 'rgba(236,233,226,0.45)') : 'rgba(255,255,255,0.025)')
+      : `rgba(214,228,246,${0.05 + 0.18 * (Math.log10(l.v + 1) / maxV)})`;
+    ctx.lineWidth = w / Math.sqrt(transform.k);
+    const [cx, cy] = curve(a, b, 0.12);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cx, cy, b.x, b.y); ctx.stroke();
+  }
+
+  // particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.t += p.speed * dt / 16;
+    if (p.t >= 1) { particles.splice(i, 1); continue; }
+    const [cx, cy] = curve(p.a, p.b, 0.12 + p.bend * 0.2);
+    const t = p.t, u = 1 - t;
+    const x = u * u * p.a.x + 2 * u * t * cx + t * t * p.b.x;
+    const y = u * u * p.a.y + 2 * u * t * cy + t * t * p.b.y;
+    const faded = (focus && p.a !== focus && p.b !== focus) || (keyFocus?.f && p.flow !== keyFocus.f) || (keyFocus?.k && !inKey(p.a) && !inKey(p.b));
+    ctx.globalAlpha = faded ? 0.08 : Math.sin(Math.PI * t) * 0.95;
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color; ctx.shadowBlur = faded ? 0 : 8;
+    ctx.beginPath(); ctx.arc(x, y, p.size / Math.sqrt(transform.k), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+
+  // nodes
+  const sorted = G.nodes.filter(visible).sort((a, b) => radius(a) - radius(b));
+  for (const n of sorted) {
+    const bal = Math.max(replayBal(n), 0);
+    const r = radius(n, bal);
+    const c = nodeColor(n);
+    const dim = dimmed(n);
+    ctx.globalAlpha = dim ? 0.15 : 1;
+
+    // pulse when tokens land
+    const hit = flashes.get(n);
+    if (hit && now - hit < 700) {
+      const k = (now - hit) / 700;
+      ctx.strokeStyle = c; ctx.lineWidth = 1.5 / transform.k; ctx.globalAlpha = (dim ? 0.1 : 0.7) * (1 - k);
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 4 + k * 16, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = dim ? 0.15 : 1;
+    }
+
+    if (n.kind === 'others') {
+      ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.setLineDash([3, 4]); ctx.lineWidth = 1 / transform.k;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+    } else {
+      const g = ctx.createRadialGradient(n.x - r * 0.35, n.y - r * 0.35, r * 0.1, n.x, n.y, r);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.18, c); g.addColorStop(1, shade(c));
+      ctx.fillStyle = g;
+      if (!dim && (n.kind === 'deployer' || n.kind === 'pool')) { ctx.shadowColor = c; ctx.shadowBlur = 18; }
+      ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      if (n.cluster && !dim) { ctx.strokeStyle = COLORS.cluster; ctx.lineWidth = 1.2 / transform.k; ctx.beginPath(); ctx.arc(n.x, n.y, r + 3, 0, Math.PI * 2); ctx.stroke(); }
+    }
+    if (n === focus) {
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5 / transform.k;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 5 + Math.sin(now / 200) * 1.5, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // labels for the landmarks, the focus and its neighbours
+    const show = n === focus || (linked && linked.has(n)) || (filters.labels && (n.kind !== 'wallet' || r > 12));
+    if (show && !dim) {
+      ctx.globalAlpha = 1;
+      ctx.font = `${n.kind === 'wallet' ? 400 : 500} ${11 / Math.sqrt(transform.k)}px Inter, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = n.kind === 'wallet' ? '#9a958d' : '#ece9e2';
+      ctx.fillText(n.label, n.x, n.y + r + 14 / Math.sqrt(transform.k));
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+const shadeCache = {};
+function shade(hex) {
+  if (shadeCache[hex]) return shadeCache[hex];
+  const n = parseInt(hex.slice(1), 16);
+  const f = c => Math.round(c * 0.45);
+  return (shadeCache[hex] = `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`);
+}
+
+requestAnimationFrame(frame);
+
+// /app/0x… loads straight away
+const fromPath = location.pathname.match(/^\/app\/(0x[a-fA-F0-9]{40})/)?.[1] || new URLSearchParams(location.search).get('q');
+if (fromPath) { $('q').value = fromPath; load(fromPath); }
+</script>
+</body>
+</html>

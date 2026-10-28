@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tell — read the tell before you buy</title>
+<meta name="description" content="Tell checks new token launches on Robinhood Chain: contract, holders, deployer, website and market, in one risk score.">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0b0b0c;
+  --ink-2: #121213;
+  --ink-3: #19191b;
+  --line: rgba(255,255,255,0.08);
+  --line-2: rgba(255,255,255,0.14);
+  --text: #ece9e2;
+  --muted: #9a958d;
+  --dim: #5f5b55;
+  --red: #8e0c14;
+  --red-deep: #5c070c;
+  --pale: #d6e4f6;
+  --green: #4fb27a;
+  --amber: #e3a540;
+  --bad: #ff5a5f;
+
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --max: 1240px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--ink); scroll-behavior: smooth; }
+body {
+  background: var(--ink); color: var(--text); font-family: var(--sans);
+  font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; }
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 16px; }
+@media (min-width: 768px) { .wrap { padding: 0 40px; } }
+
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.serif { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; }
+em { font-style: italic; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; border-radius: 9999px; padding: 13px 22px;
+  font-size: 14px; font-weight: 500; cursor: pointer; border: 0; white-space: nowrap; transition: transform .15s, background .15s;
+}
+.btn-cream { background: var(--text); color: var(--ink); }
+.btn-cream:hover { background: #fff; }
+.btn-ghost { background: transparent; color: var(--text); padding-left: 4px; }
+.btn-ghost .arr { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); display: grid; place-items: center; }
+.btn:active { transform: scale(.98); }
+
+/* ---------- Nav ---------- */
+nav { position: absolute; inset: 0 0 auto 0; z-index: 20; }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.brand { font-family: var(--serif); font-size: 22px; letter-spacing: 0.32em; display: inline-flex; align-items: center; gap: 12px; }
+.logo { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,0.25); transition: transform .4s cubic-bezier(.2,.7,.2,1); }
+.brand:hover .logo { transform: rotate(-8deg) scale(1.06); }
+.nav-links { display: none; gap: 28px; font-size: 13px; color: rgba(236,233,226,0.85); }
+.nav-links a:hover { color: #fff; }
+@media (min-width: 900px) { .nav-links { display: flex; } }
+.nav-cta { border: 1px solid rgba(236,233,226,0.35); border-radius: 9999px; padding: 8px 16px; font-size: 13px; }
+.nav-cta:hover { border-color: var(--text); background: rgba(255,255,255,0.06); }
+.nav-cta { display: inline-flex; gap: 6px; align-items: center; background: rgba(0,0,0,0.18); backdrop-filter: blur(6px); transition: border-color .2s, background .2s; }
+.report-links a.map-link { background: var(--text); color: var(--ink); border-color: var(--text); }
+.report-links a.map-link:hover { background: #fff; }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative; overflow: hidden; min-height: 100svh; display: flex; align-items: center;
+  background:
+    radial-gradient(120% 90% at 75% 40%, rgba(255,40,40,0.18), transparent 60%),
+    radial-gradient(140% 120% at 20% 100%, var(--red-deep), transparent 70%),
+    var(--red);
+}
+.hero::after { /* paper grain */
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .22; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.statue {
+  position: absolute; right: -14%; bottom: -6%; height: 108%; max-height: 1100px; width: auto;
+  opacity: .32; pointer-events: none; user-select: none;
+}
+@media (min-width: 900px) { .statue { right: -8%; opacity: 1; height: 104%; bottom: -10%; } }
+@media (min-width: 1100px) { .statue { right: 0; } }
+@media (min-width: 1400px) { .statue { right: 6%; } }
+
+.hero-inner { position: relative; z-index: 2; padding-top: 120px; padding-bottom: 72px; width: 100%; }
+.hero-fade { /* keeps the copy readable where the statue sits behind it */
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, var(--red) 0%, rgba(142,12,20,0.85) 45%, rgba(142,12,20,0) 75%);
+}
+@media (min-width: 1100px) { .hero-fade { background: linear-gradient(90deg, rgba(142,12,20,0.7) 0%, rgba(142,12,20,0) 45%); } }
+.hero h1 { font-family: var(--serif); font-weight: 400; color: #fff; font-size: 56px; line-height: 0.95; letter-spacing: -0.02em; margin-top: 22px; max-width: 640px; }
+@media (min-width: 768px) { .hero h1 { font-size: 96px; } }
+.hero .lead { margin-top: 24px; max-width: 470px; color: rgba(255,255,255,0.82); font-size: 16px; }
+.hero .label { color: rgba(255,255,255,0.75); }
+
+.check-form { margin-top: 32px; display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+@media (min-width: 600px) { .check-form { flex-direction: row; } }
+.check-form input {
+  flex: 1; min-width: 0; background: rgba(10,4,5,0.45); border: 1px solid rgba(255,255,255,0.18);
+  color: #fff; border-radius: 9999px; padding: 13px 20px; font: 14px var(--mono); outline: none; backdrop-filter: blur(6px);
+}
+.check-form input::placeholder { color: rgba(255,255,255,0.5); }
+.check-form input:focus { border-color: rgba(255,255,255,0.6); }
+.hero-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 14px; }
+.error { font-size: 14px; color: #ffd3d4; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px; margin-top: 12px; max-width: 560px; }
+
+.stats { display: flex; gap: 40px; margin-top: 64px; flex-wrap: wrap; }
+.stat b { display: block; font-family: var(--serif); font-weight: 400; font-size: 34px; color: #fff; line-height: 1; }
+.stat .label { display: block; margin-top: 8px; font-size: 10px; }
+.credit { position: absolute; right: 16px; bottom: 12px; z-index: 2; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.45); }
+
+/* ---------- Sections ---------- */
+section { padding: 120px 0; border-top: 1px solid var(--line); }
+.sec-head { display: grid; gap: 20px; margin-bottom: 56px; }
+@media (min-width: 900px) { .sec-head { grid-template-columns: 1fr 1fr; align-items: end; } }
+.sec-head h2 { font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: 1; letter-spacing: -0.015em; margin-top: 14px; }
+@media (min-width: 768px) { .sec-head h2 { font-size: 64px; } }
+.sec-head p { color: var(--muted); max-width: 460px; }
+
+/* ---------- Report ---------- */
+.frame { background: var(--ink-2); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+@media (min-width: 768px) { .frame { padding: 20px; } }
+.frame-bar { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 14px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.status { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
+.status.busy::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--bad); margin-right: 8px; animation: pulse 1s infinite; vertical-align: middle; }
+@keyframes pulse { 50% { opacity: .2; } }
+
+.report { display: grid; gap: 12px; transition: opacity .25s; }
+.report.loading { opacity: .35; }
+@media (min-width: 960px) { .report { grid-template-columns: 340px 1fr; } }
+.summary { background: var(--ink-3); border: 1px solid var(--line); border-radius: 12px; padding: 22px; }
+.tk { display: flex; gap: 12px; align-items: center; }
+.tk-ava { width: 42px; height: 42px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--pale), #1e4e6c); overflow: hidden; flex: none; }
+.tk-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tk-name { font-weight: 500; }
+.tk-full { color: var(--dim); font-weight: 400; font-size: 13px; margin-left: 4px; }
+.tk-addr { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+.score { margin-top: 26px; display: flex; align-items: baseline; gap: 10px; }
+.score b { font-family: var(--serif); font-weight: 400; font-size: 84px; line-height: .85; }
+.score span { color: var(--dim); font-size: 13px; }
+.meter { margin-top: 16px; height: 3px; background: var(--line); border-radius: 9999px; overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 9999px; transition: width .8s ease; }
+.t-ok { --c: var(--green); } .t-mid { --c: #d8c24a; } .t-warn { --c: var(--amber); } .t-bad { --c: var(--bad); }
+.meter i { background: var(--c); }
+.risk-tag { display: inline-block; margin-top: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 9999px; padding: 3px 10px; }
+.verdict { margin-top: 20px; font-family: var(--serif); font-size: 22px; line-height: 1.2; }
+.verdict .label { display: block; font-size: 10px; margin-bottom: 8px; }
+.meta { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 9999px; padding: 2px 9px; }
+
+.groups { display: grid; gap: 12px; }
+@media (min-width: 640px) { .groups { grid-template-columns: 1fr 1fr; } }
+.group { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.group h4 { display: flex; justify-content: space-between; font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.row { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.row:first-of-type { border-top: 0; }
+.row small { display: block; color: var(--dim); font-size: 12px; word-break: break-all; }
+.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 8px; }
+.dot.ok { background: var(--green); } .dot.warn { background: var(--amber); } .dot.bad { background: var(--bad); }
+.dot.info { background: var(--dim); } .dot.soon { border: 1px solid var(--dim); }
+.row.empty { color: var(--dim); }
+
+.report-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.report-links:empty { display: none; }
+.report-links a, .report-links button { border: 1px solid var(--line-2); background: none; color: var(--text); border-radius: 9999px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+.report-links a:hover, .report-links button:hover { border-color: var(--text); }
+
+/* ---------- Checks list ---------- */
+.list { display: grid; gap: 0 48px; }
+@media (min-width: 900px) { .list { grid-template-columns: 1fr 1fr; } }
+.item { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 26px 0; border-top: 1px solid var(--line); }
+.item .label { padding-top: 6px; }
+.item h3 { font-family: var(--serif); font-weight: 400; font-size: 28px; line-height: 1.1; }
+.item p { margin-top: 8px; color: var(--muted); font-size: 15px; }
+
+.pads { display: flex; flex-wrap: wrap; gap: 10px; }
+.pad { border: 1px solid var(--line-2); border-radius: 9999px; padding: 8px 18px; font-size: 14px; }
+.pad.soon { color: var(--dim); border-style: dashed; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 16px 20px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+th.us { color: var(--text); }
+tr:last-child td { border-bottom: 0; }
+.y { color: var(--green); } .n { color: var(--dim); }
+
+.token-card { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+@media (min-width: 768px) { .token-card { grid-template-columns: repeat(3, 1fr); } }
+.token-card div { background: var(--ink); padding: 24px; }
+.token-card b { display: block; font-family: var(--serif); font-weight: 400; font-size: 30px; margin: 10px 0 6px; }
+.token-card p { color: var(--muted); font-size: 14px; }
+
+details { border-top: 1px solid var(--line); padding: 22px 0; }
+details:last-child { border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; font-family: var(--serif); font-size: 24px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-family: var(--mono); font-size: 18px; color: var(--muted); }
+details[open] summary::after { content: "−"; }
+details p { margin-top: 12px; color: var(--muted); max-width: 720px; }
+
+.final { position: relative; overflow: hidden; background: var(--red); padding: 140px 0; border-top: 0; }
+.final h2 { font-family: var(--serif); font-weight: 400; font-size: 52px; line-height: .95; color: #fff; max-width: 700px; }
+@media (min-width: 768px) { .final h2 { font-size: 88px; } }
+.final .btn { margin-top: 36px; }
+
+/* ---------- Check in progress ---------- */
+.frame { position: relative; overflow: hidden; }
+.progress { position: absolute; top: 0; left: 0; right: 0; height: 2px; overflow: hidden; opacity: 0; transition: opacity .3s; }
+.progress.on { opacity: 1; }
+.progress::before { content: ""; position: absolute; top: 0; left: -35%; width: 35%; height: 100%; background: linear-gradient(90deg, transparent, var(--bad), transparent); animation: slide 1.1s ease-in-out infinite; }
+@keyframes slide { to { left: 100%; } }
+@keyframes sweep { to { transform: rotate(1turn); } }
+.spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(11,11,12,0.25); border-top-color: var(--ink); animation: sweep .7s linear infinite; }
+.btn:disabled { cursor: progress; opacity: .85; }
+
+/* ---------- Motion ---------- */
+.hero::after { animation: grain .9s steps(4) infinite; inset: -20%; }
+@keyframes grain {
+  0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); }
+  50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } 100% { transform: translate(0, 0); }
+}
+
+.statue-wrap { position: absolute; inset: 0; pointer-events: none; transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.statue { animation: statue-in 1.6s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes statue-in { from { opacity: 0; transform: translateY(40px) scale(1.04); filter: blur(6px); } }
+
+/* the "reading" beam that sweeps over the statue */
+.scan {
+  position: absolute; z-index: 1; right: 0; width: 60%; height: 140px; top: -160px; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(214,228,246,0.10) 45%, rgba(255,255,255,0.35) 50%, rgba(214,228,246,0.10) 55%, transparent);
+  mix-blend-mode: screen; animation: scan 5.5s cubic-bezier(.45,0,.55,1) 1.4s infinite;
+}
+@keyframes scan { 0% { transform: translateY(0); opacity: 0; } 8% { opacity: 1; } 70% { opacity: 1; } 85%, 100% { transform: translateY(calc(100svh + 300px)); opacity: 0; } }
+
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+.reveal.in { opacity: 1; transform: none; }
+
+.hero h1 .ln { display: block; overflow: hidden; }
+.hero h1 .ln > span { display: inline-block; transform: translateY(105%); animation: rise 1.1s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--d, 0s); }
+@keyframes rise { to { transform: none; } }
+.fade-up { opacity: 0; animation: fade-up 1s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--d, 0s); }
+@keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.btn span:last-child, .btn .arr { transition: transform .25s; }
+.btn:hover span:last-child:not(.arr) { transform: translateX(4px); }
+.btn-ghost:hover .arr { transform: translateX(4px); border-color: var(--text); }
+
+.ticker { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; background: var(--ink); }
+.ticker-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
+.ticker-track span { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 18px 28px; white-space: nowrap; }
+.ticker-track span b { color: var(--text); font-weight: 400; }
+.ticker-track span i { font-style: normal; color: var(--bad); margin-right: 10px; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+.anim-rows .row { opacity: 0; animation: fade-up .5s cubic-bezier(.2,.7,.2,1) forwards; }
+.anim-rows .group { opacity: 0; animation: fade-up .6s cubic-bezier(.2,.7,.2,1) forwards; }
+.summary.flash { animation: flash 1.2s ease; }
+@keyframes flash { 0% { box-shadow: 0 0 0 1px var(--c), 0 0 40px -6px var(--c); } 100% { box-shadow: 0 0 0 1px transparent; } }
+
+.group, .item, .pad, .token-card div { transition: border-color .25s, background .25s, transform .25s; }
+.group:hover { border-color: var(--line-2); }
+.item:hover h3 { transform: translateX(6px); }
+.item h3 { transition: transform .35s cubic-bezier(.2,.7,.2,1); }
+.pad:hover { border-color: var(--text); transform: translateY(-2px); }
+.token-card div:hover { background: var(--ink-2); }
+
+.final .statue-ghost { position: absolute; right: -6%; top: -20%; height: 150%; opacity: .18; pointer-events: none; mix-blend-mode: screen; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal, .fade-up, .anim-rows .row, .anim-rows .group { opacity: 1 !important; transform: none !important; }
+  .hero h1 .ln > span { transform: none !important; }
+  .scan { display: none; }
+}
+
+footer { padding: 40px 0 56px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+footer .wrap { display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 768px) { footer .wrap { flex-direction: row; justify-content: space-between; } }
+footer a { text-decoration: underline; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="/"><img class="logo" src="/assets/logo.webp" alt="" width="34" height="34">TELL</a>
+    <div class="nav-links">
+      <a href="#report">Report</a>
+      <a href="#checks">Checks</a>
+      <a href="#compare">Compare</a>
+      <a href="#token">$TELL</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="nav-cta" href="/app">Open app <span>↗</span></a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="statue-wrap" id="statue"><img class="statue" src="/assets/statue.webp" alt="" width="854" height="1200"></div>
+  <div class="scan"></div>
+  <div class="hero-fade"></div>
+  <div class="wrap hero-inner">
+    <span class="label fade-up" style="--d:.1s">Launch checks on Robinhood Chain</span>
+    <h1><span class="ln"><span style="--d:.2s">Read the tell</span></span><span class="ln"><span style="--d:.35s">before you <em>buy.</em></span></span></h1>
+    <p class="lead fade-up" style="--d:.7s">Paste a token. Tell reads the contract, the market and the project's footprint, and returns one risk score with a plain-language verdict.</p>
+    <form class="check-form fade-up" style="--d:.85s" id="form">
+      <input id="addr" placeholder="0x… token address or DexScreener link" autocomplete="off" spellcheck="false">
+      <button class="btn btn-cream" type="submit">Check token <span>→</span></button>
+    </form>
+    <p class="error" id="error" hidden></p>
+    <div class="hero-sub fade-up" style="--d:1s">
+      <button class="btn btn-ghost" type="button" id="sample">Try a live example <span class="arr">→</span></button>
+      <a class="btn btn-ghost" href="/app">Open the token map <span class="arr">↗</span></a>
+    </div>
+    <div class="stats fade-up" style="--d:1.15s">
+      <div class="stat"><b>~<span data-count="10">10</span>s</b><span class="label">to check</span></div>
+      <div class="stat"><b data-count="5">5</b><span class="label">check groups</span></div>
+      <div class="stat"><b>$<span data-count="0">0</span></b><span class="label">no sign-up</span></div>
+    </div>
+  </div>
+  <span class="credit">Head of an athlete · The Met, CC0</span>
+</header>
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<section id="report">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">01 / Report</span>
+        <h2>Every check,<br><em>one verdict.</em></h2>
+      </div>
+      <p>The report reads live from Robinhood Chain and DexScreener. Each link is shareable, so you can drop it into a group chat before anyone apes in.</p>
+    </div>
+
+    <div class="frame">
+      <div class="progress" id="progress"></div>
+      <div class="frame-bar">
+        <span class="label">tell.markets/t/…</span>
+        <span class="status" id="status">Example report</span>
+      </div>
+      <div class="report" id="report-body">
+        <div class="summary t-warn">
+          <div class="tk">
+            <div class="tk-ava"></div>
+            <div>
+              <div class="tk-name">$EXAMPLE <span class="tk-full">Example Token</span></div>
+              <div class="tk-addr">0x7a3c…e21f · uniswap v4</div>
+            </div>
+          </div>
+          <div class="score"><b>62</b><span>/ 100 risk</span></div>
+          <div class="meter"><i style="width:62%"></i></div>
+          <span class="risk-tag">Caution</span>
+          <div class="verdict"><span class="label">Verdict</span>No product, only a waitlist. The deployer holds 4% with a 7-day unlock.</div>
+          <div class="meta"><span class="badge">age 2d</span><span class="badge">liq. $41.2k</span><span class="badge">mcap $310k</span></div>
+        </div>
+        <div class="groups">
+          <div class="group"><h4>Contract <span>3 / 4</span></h4>
+            <div class="row"><i class="dot ok"></i><div>Liquidity locked<small>Pons locker, no withdraw</small></div></div>
+            <div class="row"><i class="dot ok"></i><div>No mint function</div></div>
+            <div class="row"><i class="dot warn"></i><div>8% sell tax<small>goes to the deployer</small></div></div>
+            <div class="row"><i class="dot ok"></i><div>Ownership renounced</div></div>
+          </div>
+          <div class="group"><h4>Holders <span>1 / 3</span></h4>
+            <div class="row"><i class="dot warn"></i><div>Top 10 hold 38%<small>excluding pool and locker</small></div></div>
+            <div class="row"><i class="dot warn"></i><div>Cluster of 6 wallets holds 11%<small>funded from one address</small></div></div>
+            <div class="row"><i class="dot ok"></i><div>Snipers have mostly sold</div></div>
+          </div>
+          <div class="group"><h4>Deployer <span>0 / 2</span></h4>
+            <div class="row"><i class="dot bad"></i><div>14 launches in 30 days<small>12 of them are dead</small></div></div>
+            <div class="row"><i class="dot warn"></i><div>Holds 4%, 7-day vesting</div></div>
+          </div>
+          <div class="group"><h4>Website &amp; socials <span>1 / 3</span></h4>
+            <div class="row"><i class="dot bad"></i><div>Waitlist only<small>collects wallet addresses</small></div></div>
+            <div class="row"><i class="dot ok"></i><div>Contract address on site matches</div></div>
+            <div class="row"><i class="dot warn"></i><div>X account is 3 weeks old</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="report-links" id="links"></div>
+    </div>
+  </div>
+</section>
+
+<section id="checks">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">02 / Checks</span>
+        <h2>Fifteen minutes of homework,<br><em>in seconds.</em></h2>
+      </div>
+      <p>The explorer, the holder map, the deployer's history, the website. Tell opens all of it so you don't have to.</p>
+    </div>
+    <div class="list">
+      <div class="item"><span class="label">01</span><div><h3>Contract</h3><p>Who owns it, whether it can mint, pause, blacklist or change taxes, and whether the code can be swapped behind a proxy.</p></div></div>
+      <div class="item"><span class="label">02</span><div><h3>Market</h3><p>Liquidity, pool age, sell pressure and the pair it trades against, straight from the DEX.</p></div></div>
+      <div class="item"><span class="label">03</span><div><h3>Holders</h3><p>Top-wallet share without pools, curves and lockers, wallets seeded from one address, and snipers from the first blocks. Built from every transfer since launch.</p></div></div>
+      <div class="item"><span class="label">04</span><div><h3>Deployer</h3><p>Who pressed launch, what they still hold, whether they dumped, and every token they launched before through the same factory.</p></div></div>
+      <div class="item"><span class="label">05</span><div><h3>Website</h3><p>An AI read of the project site: a working product or just a waitlist, wallet-harvesting forms, too-good-to-be-true promises, and whether the contract address on the site matches.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="coverage">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">03 / Coverage</span>
+        <h2>Built for <em>Robinhood Chain.</em></h2>
+      </div>
+      <p>Paste a token address or any DexScreener link, including Uniswap v4 pool IDs. Tell finds the token and the pool on its own.</p>
+    </div>
+    <div class="pads">
+      <span class="pad">Pons V2</span>
+      <span class="pad">Ostra</span>
+      <span class="pad">Conductor Builder Pad</span>
+      <span class="pad">Uniswap v3 · v4</span>
+      <span class="pad soon">More chains later</span>
+    </div>
+  </div>
+</section>
+
+<section id="compare">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">04 / Compare</span>
+        <h2>More than a <em>bubble map.</em></h2>
+      </div>
+      <p>Holder maps show who holds. Terminals show the chart. Tell puts the whole picture in one report.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <tr><th></th><th>Holder maps</th><th>Terminals</th><th class="us">Tell</th></tr>
+        <tr><td>Holder clusters</td><td class="y">✓</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Contract permissions</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>Deployer history</td><td class="n">—</td><td class="n">partial</td><td class="y">✓</td></tr>
+        <tr><td>AI website review</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
+        <tr><td>One-line verdict</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="token">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">05 / $TELL</span>
+        <h2>Free to use.<br><em>Better to hold.</em></h2>
+      </div>
+      <p>Checking a token stays free. $TELL holders get more out of it, and part of the revenue goes back into the token.</p>
+    </div>
+    <div class="token-card">
+      <div><span class="label">Free</span><b>3 checks a day</b><p>No wallet, no sign-up.</p></div>
+      <div><span class="label">Holders</span><b>Unlimited</b><p>Plus alerts on new launches. Link a wallet with one signature, no transaction.</p></div>
+      <div><span class="label">Revenue</span><b>Buybacks</b><p>A share of paid checks buys $TELL back, from a public address.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">06 / FAQ</span>
+        <h2>Before you <em>check.</em></h2>
+      </div>
+    </div>
+    <details><summary>Is this financial advice?</summary><p>No. Tell describes what it finds on chain and on the web. It never tells you to buy or sell, and it can be wrong, so every report shows why it scored the way it did.</p></details>
+    <details><summary>How is the score calculated?</summary><p>Each finding adds risk points. Critical findings, like an owner who can mint new tokens or unlocked liquidity, push the score to at least 80 on their own.</p></details>
+    <details><summary>Which tokens can I check?</summary><p>Any ERC-20 on Robinhood Chain. Paste the address, or a DexScreener link to its pool.</p></details>
+    <details><summary>Why did a stablecoin get a high score?</summary><p>Stablecoins can mint by design. A list of known assets is on the way so they stop raising false alarms.</p></details>
+  </div>
+</section>
+
+<section class="final">
+  <img class="statue-ghost" src="/assets/statue.webp" alt="">
+  <div class="wrap" style="position:relative">
+    <span class="label" style="color:rgba(255,255,255,.7)">Tell</span>
+    <h2 style="margin-top:16px">Every token has a tell.<br><em>Read it first.</em></h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:36px">
+      <a class="btn btn-cream" href="/app" style="margin-top:0">Open app <span>→</span></a>
+      <a class="btn btn-ghost" href="#top" style="margin-top:0;color:#fff">Check a token <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Tell · tell.markets</span>
+    <span>Not financial advice. Tell can be wrong; always check for yourself. Statue: <a href="https://www.metmuseum.org/art/collection/search/248579" target="_blank" rel="noopener">The Met</a>, public domain.</span>
+  </div>
+</footer>
+
+<script>
+const form = document.getElementById('form');
+const input = document.getElementById('addr');
+const body = document.getElementById('report-body');
+const status = document.getElementById('status');
+const errorBox = document.getElementById('error');
+const links = document.getElementById('links');
+
+const SAMPLE = '0x45C83b37C5BAF4dad26f3845C28295e2DE010962';
+document.getElementById('sample').onclick = () => { input.value = SAMPLE; run(SAMPLE); };
+
+const GROUPS = [
+  ['contract', 'Contract'],
+  ['holders', 'Holders'],
+  ['deployer', 'Deployer'],
+  ['website', 'Website & socials'],
+  ['market', 'Market'],
+];
+const SOON = {
+  holders: 'Soon: top-wallet share, linked wallets, snipers',
+  deployer: "Soon: this address's previous launches and what happened to them",
+};
+const steps = ['Reading contract', 'Loading transfer history', 'Mapping holders', 'Tracing the deployer', 'Reading the website', 'AI is writing the verdict'];
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const short = a => a.slice(0, 6) + '…' + a.slice(-4);
+const usd = n => n >= 1e6 ? '$' + (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? '$' + (n / 1e3).toFixed(1) + 'k' : '$' + Math.round(n);
+const tone = v => v >= 80 ? 'bad' : v >= 60 ? 'warn' : v >= 30 ? 'mid' : 'ok';
+
+form.addEventListener('submit', e => { e.preventDefault(); run(input.value.trim()); });
+
+const submitBtn = form.querySelector('button[type=submit]');
+const progress = document.getElementById('progress');
+let running = false;
+
+async function run(q) {
+  if (!q) { input.focus(); return; }
+  if (running) return;
+  running = true;
+  errorBox.hidden = true;
+  // answer the click straight away: the check itself takes 10-30s
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spin"></span>Checking…';
+  progress.classList.add('on');
+  body.classList.add('loading');
+  status.classList.add('busy');
+  document.getElementById('report').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  let i = 0;
+  status.textContent = steps[0];
+  const ticker = setInterval(() => { status.textContent = steps[Math.min(++i, steps.length - 1)]; }, 1800);
+  try {
+    const res = await fetch('/api/check?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Check failed');
+    render(data);
+    status.textContent = 'Done · ' + (data.ms / 1000).toFixed(1) + 's';
+    history.replaceState(null, '', '/t/' + data.token.address);
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.hidden = false;
+    status.textContent = 'Error';
+  } finally {
+    clearInterval(ticker);
+    running = false;
+    progress.classList.remove('on');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Check token <span>→</span>';
+    body.classList.remove('loading');
+    status.classList.remove('busy');
+  }
+}
+
+function render(r) {
+  const pair = r.pairs[0];
+  const sym = r.token.symbol ? '$' + r.token.symbol : short(r.token.address);
+  const img = r.meta?.image || pair?.info?.imageUrl;
+  const t = tone(r.score.value);
+  const meta = [];
+  if (pair?.pairCreatedAt) {
+    const h = (Date.now() - pair.pairCreatedAt) / 36e5;
+    meta.push('age ' + (h < 48 ? Math.round(h) + 'h' : Math.round(h / 24) + 'd'));
+  }
+  if (r.facts?.holders) meta.push(r.facts.holders.toLocaleString('en-US') + ' holders');
+  if (pair?.liquidity?.usd) meta.push('liq. ' + usd(pair.liquidity.usd));
+  if (pair?.marketCap) meta.push('mcap ' + usd(pair.marketCap));
+  if (pair?.volume?.h24) meta.push('24h vol ' + usd(pair.volume.h24));
+
+  const summary = `
+    <div class="summary t-${t}">
+      <div class="tk">
+        <div class="tk-ava">${img ? `<img src="${esc(img)}" alt="">` : ''}</div>
+        <div>
+          <div class="tk-name">${esc(sym)}${r.token.name ? `<span class="tk-full">${esc(r.token.name)}</span>` : ''}</div>
+          <div class="tk-addr">${short(r.token.address)}${pair ? ' · ' + esc(pair.dexId) + (pair.labels?.length ? ' ' + esc(pair.labels.join('/')) : '') : ''}</div>
+        </div>
+      </div>
+      <div class="score"><b>${r.score.value}</b><span>/ 100 risk</span></div>
+      <div class="meter"><i style="width:${Math.max(r.score.value, 3)}%"></i></div>
+      <span class="risk-tag">${esc(r.score.label)}</span>
+      <div class="verdict"><span class="label">${r.aiVerdict ? 'AI verdict' : 'Verdict'}</span>${esc(r.verdict)}</div>
+      <div class="meta">${meta.map(m => `<span class="badge">${esc(m)}</span>`).join('')}</div>
+    </div>`;
+
+  let n = 0; // running index so rows cascade in one after another
+  const groups = GROUPS.map(([id, title], gi) => {
+    const items = r.checks.filter(c => c.group === id);
+    const good = items.filter(c => c.status === 'ok' || c.status === 'info').length;
+    const rows = items.length
+      ? items.map(c => `<div class="row" style="animation-delay:${0.25 + n++ * 0.07}s"><i class="dot ${c.status}"></i><div>${esc(c.title)}${c.detail ? `<small>${esc(c.detail)}</small>` : ''}</div></div>`).join('')
+      : `<div class="row empty" style="animation-delay:${0.25 + n++ * 0.07}s"><i class="dot soon"></i><div>${esc(SOON[id] || 'No data')}</div></div>`;
+    return `<div class="group" style="animation-delay:${gi * 0.08}s"><h4>${title}<span>${items.length ? good + ' / ' + items.length : '—'}</span></h4>${rows}</div>`;
+  }).join('');
+
+  body.classList.remove('anim-rows');
+  body.innerHTML = summary.replace('class="summary', 'class="summary flash') + `<div class="groups">${groups}</div>`;
+  void body.offsetWidth; // restart the cascade on every new report
+  body.classList.add('anim-rows');
+
+  // score counts up while the meter fills
+  const scoreEl = body.querySelector('.score b');
+  const meterEl = body.querySelector('.meter i');
+  meterEl.style.width = '0%';
+  requestAnimationFrame(() => { meterEl.style.width = Math.max(r.score.value, 3) + '%'; });
+  countUp(scoreEl, r.score.value, 900);
+
+  const out = [];
+  if (pair) out.push(`<a href="${esc(pair.url)}" target="_blank" rel="noopener">DexScreener ↗</a>`);
+  out.push(`<a class="map-link" href="/app/${r.token.address}">Open token map →</a>`);
+  out.push(`<a href="https://robinhoodchain.blockscout.com/token/${r.token.address}" target="_blank" rel="noopener">Explorer ↗</a>`);
+  out.push(`<button type="button" id="share">Copy link</button>`);
+  links.innerHTML = out.join('');
+  document.getElementById('share').onclick = e => {
+    navigator.clipboard?.writeText(location.href).then(() => { e.target.textContent = 'Copied'; }, () => {});
+  };
+}
+
+function countUp(el, to, ms) {
+  const start = performance.now();
+  const step = now => {
+    const p = Math.min((now - start) / ms, 1);
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Ticker under the hero
+const TICKS = ['Pons V2', 'Ostra', 'Conductor', 'Uniswap v4', 'Contract permissions', 'Proxy detection',
+  'Holder clusters', 'Deployer history', 'AI website review', 'One-line verdict', 'Not financial advice'];
+document.getElementById('ticker').innerHTML = [...TICKS, ...TICKS].map(t => `<span><i>●</i><b>${t}</b></span>`).join('');
+
+// Statue follows the cursor a little and drifts slower than the page on scroll
+const statue = document.getElementById('statue');
+let mx = 0, my = 0;
+if (!calm) {
+  addEventListener('mousemove', e => {
+    mx = (e.clientX / innerWidth - 0.5) * -18;
+    my = (e.clientY / innerHeight - 0.5) * -12;
+    moveStatue();
+  }, { passive: true });
+  addEventListener('scroll', moveStatue, { passive: true });
+}
+function moveStatue() {
+  statue.style.transform = `translate3d(${mx}px, ${my + scrollY * 0.18}px, 0)`;
+}
+
+// Reveal blocks as they scroll in
+const revealSel = ['.sec-head', '.frame', '.item', '.pad', '.table-wrap', '.token-card > div', 'details', '.final h2', '.final .btn'];
+document.querySelectorAll(revealSel.join(',')).forEach(el => {
+  el.classList.add('reveal');
+  const sibs = [...el.parentElement.children].filter(c => c.matches(revealSel.join(',')));
+  el.style.setProperty('--d', Math.min(sibs.indexOf(el), 6) * 0.08 + 's');
+});
+const io = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// Hero stats count up once
+document.querySelectorAll('[data-count]').forEach(el => {
+  const to = +el.dataset.count;
+  if (to > 0 && !calm) setTimeout(() => countUp(el, to, 900), 1200);
+});
+
+// Shareable link: /t/0x… runs the check on load.
+const fromPath = location.pathname.match(/^\/t\/(0x[a-fA-F0-9]{40})/)?.[1];
+if (fromPath) { input.value = fromPath; run(fromPath); }
+</script>
+</body>
+</html>
