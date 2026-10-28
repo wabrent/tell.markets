@@ -5,7 +5,7 @@ import { resolveToken, type Report } from './analyze.js';
 import { isHolder, newNonce, sessionAddress, signInMessage, signOut, tellBalance, verify } from './auth.js';
 import { aiStatus } from './ai/review.js';
 import { config } from './config.js';
-import { launchFeed, startLaunchWatcher } from './launches.js';
+import { launchesResponse, startLaunchWatcher } from './launches.js';
 import { siteCard, tokenCard } from './og.js';
 import { cachedReport, getReport, scoreHistory } from './reports.js';
 
@@ -28,7 +28,7 @@ createServer(async (req, res) => {
   try {
     // ---------- API ----------
     if (path === '/api/check') return await check(req, res, url);
-    if (path === '/api/launches') return json(res, 200, { launches: launchFeed() });
+    if (path === '/api/launches') return json(res, 200, await launchesResponse(config.launchWatcher));
     if (path === '/api/health') {
       return json(res, 200, {
         ok: true, ai: aiStatus, launchWatcher: config.launchWatcher,

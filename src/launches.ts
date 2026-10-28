@@ -30,23 +30,38 @@ export interface Launch {
 const launches = new JsonStore<Launch>('launches.json', 3000);
 let lastBlock = 0n;
 let latestSeen = { block: 0n, at: 0 };
+/** Every launch seen in the window (token -> time), including ones we haven't read metadata for. */
+const seenAt = new Map<string, number>();
+type LaunchLog = { topics: Hex[]; blockNumber: Hex; transactionHash: Hex };
+/** Launch events seen but not yet read, newest first. */
+let backlog: LaunchLog[] = [];
 
-async function poll() {
+/**
+ * Picks up new launch events. `limit` caps how many of the new ones get their metadata read in
+ * this call: unlimited for the background watcher, small for the on-demand feed on serverless.
+ */
+async function poll(limit = Infinity) {
   const latest = await withBackoff(() => client.getBlock());
   latestSeen = { block: latest.number, at: Number(latest.timestamp) * 1000 };
   const from = lastBlock ? lastBlock + 1n : latest.number - WINDOW_BLOCKS;
-  if (from > latest.number) return;
-
-  const logs = await withBackoff(() => client.request({
+  const logs = from > latest.number ? [] : await withBackoff(() => client.request({
     method: 'eth_getLogs',
     params: [{ address: PONS_FACTORY, topics: [LAUNCH_TOPIC], fromBlock: `0x${from.toString(16)}`, toBlock: `0x${latest.number.toString(16)}` }],
-  })) as { topics: Hex[]; blockNumber: Hex; transactionHash: Hex }[];
+  })) as LaunchLog[];
   lastBlock = latest.number;
 
-  // newest first, a few at a time, so the top of the feed fills in before the backlog
-  const fresh = [...logs].reverse().filter(l => !launches.get(('0x' + l.topics[1].slice(-40)).toLowerCase()));
-  for (let i = 0; i < fresh.length; i += 8) {
-    await Promise.all(fresh.slice(i, i + 8).map(async l => {
+  for (const l of logs) {
+    seenAt.set(('0x' + l.topics[1].slice(-40)).toLowerCase(), latestSeen.at - Number(latest.number - BigInt(l.blockNumber)) / BLOCKS_PER_SEC * 1000);
+  }
+
+  // newest first, a few at a time, so the top of the feed fills in before the backlog;
+  // whatever doesn't fit under `limit` waits in the backlog for the next call
+  const isNew = (l: LaunchLog) => !launches.get(('0x' + l.topics[1].slice(-40)).toLowerCase());
+  const queue = [...[...logs].reverse(), ...backlog].filter(isNew);
+  const fresh = queue.slice(0, limit);
+  backlog = queue.slice(limit, limit + 3000);
+  for (let i = 0; i < fresh.length; i += 25) {
+    await Promise.all(fresh.slice(i, i + 25).map(async l => {
       const token = getAddress('0x' + l.topics[1].slice(-40)).toLowerCase();
       const block = BigInt(l.blockNumber);
       launches.set(token, await withMeta({
@@ -61,8 +76,38 @@ async function poll() {
   }
 
   // launches stored before metadata was read: fill in a few per tick
-  const old = launches.values().filter(l => !l.metaDone).sort((a, b) => b.at - a.at).slice(0, 16);
-  for (const l of old) launches.set(l.token, await withMeta(l));
+  if (limit === Infinity) {
+    const old = launches.values().filter(l => !l.metaDone).sort((a, b) => b.at - a.at).slice(0, 16);
+    for (const l of old) launches.set(l.token, await withMeta(l));
+  }
+}
+
+/*
+ * Serverless (Vercel) has no long-running process for the watcher, so the feed is built when
+ * someone asks: one getLogs call for the whole day, metadata for the newest launches, reused for a
+ * minute. Scores fill in as visitors check tokens; the page checks the newest few itself.
+ */
+const ON_DEMAND_LIMIT = 150; // rows shown
+const ON_DEMAND_BATCH = 40;  // new launches read per refresh; the rest fill in on later refreshes
+let refreshed = 0;
+let refreshing: Promise<void> | undefined;
+
+async function refreshOnDemand() {
+  if (Date.now() - refreshed < 60_000) return;
+  refreshing ??= poll(ON_DEMAND_BATCH)
+    .then(() => { refreshed = Date.now(); })
+    .catch(err => console.error('launch refresh failed', (err as Error).message))
+    .finally(() => { refreshing = undefined; });
+  // never hold a page for long: answer with what we have and let the refresh finish
+  await Promise.race([refreshing, new Promise(r => setTimeout(r, 8000))]);
+}
+
+export async function launchesResponse(live: boolean) {
+  if (!live) await refreshOnDemand();
+  const day = Date.now() - 24 * 3600_000;
+  const total = [...seenAt.values()].filter(t => t > day).length;
+  const feed = launchFeed();
+  return { mode: live ? 'live' : 'on-demand', total: Math.max(total, feed.length), launches: feed.slice(0, live ? 1000 : ON_DEMAND_LIMIT) };
 }
 
 /** Image, name and symbol come straight from the launch call: one request, before any check runs. */
