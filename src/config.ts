@@ -15,6 +15,9 @@ export const config = {
   holderMin: Number(process.env.TELL_HOLDER_MIN) || 100_000,
   /** Checks per day without $TELL. 0 means no limit (the default until the token exists). */
   freeChecksPerDay: Number(process.env.FREE_CHECKS_PER_DAY) || 0,
-  /** Background checks of new Pons launches for the /launches feed. */
-  launchWatcher: process.env.LAUNCH_WATCHER !== 'off',
+  /**
+   * Background checks of new Pons launches for the /launches feed. Needs a long-running server,
+   * so it is off on Vercel unless LAUNCH_WATCHER=on is set explicitly.
+   */
+  launchWatcher: process.env.LAUNCH_WATCHER ? process.env.LAUNCH_WATCHER !== 'off' : !process.env.VERCEL,
 };

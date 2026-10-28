@@ -1,8 +1,17 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // Small JSON stores under data/. Enough for one server; swap for a database when there are several.
-const DIR = new URL('../data/', import.meta.url);
-mkdirSync(DIR, { recursive: true });
+// Serverless hosts (Vercel) only allow writes under the temp dir, and wipe it between instances.
+const DIR = process.env.DATA_DIR
+  ? pathToFileURL(join(process.env.DATA_DIR, '/'))
+  : process.env.VERCEL
+    ? pathToFileURL(join(tmpdir(), 'tell-data', '/'))
+    : new URL('../data/', import.meta.url);
+let writable = true;
+try { mkdirSync(DIR, { recursive: true }); } catch { writable = false; }
 
 export class JsonStore<T> {
   private data: Record<string, T>;
@@ -30,12 +39,18 @@ export class JsonStore<T> {
 
   /** Writes at most once a second, through a temp file so a crash never leaves half a file. */
   private save() {
-    if (this.timer) return;
+    if (this.timer || !writable) return;
     this.timer = setTimeout(() => {
       this.timer = undefined;
-      const tmp = new URL(this.name + '.tmp', DIR);
-      writeFileSync(tmp, JSON.stringify(this.data, (_, v) => (typeof v === 'bigint' ? v.toString() : v)));
-      renameSync(tmp, new URL(this.name, DIR));
+      try {
+        const tmp = new URL(this.name + '.tmp', DIR);
+        writeFileSync(tmp, JSON.stringify(this.data, (_, v) => (typeof v === 'bigint' ? v.toString() : v)));
+        renameSync(tmp, new URL(this.name, DIR));
+      } catch (err) {
+        // keep serving from memory; a read-only disk shouldn't take the site down
+        console.error(`could not save ${this.name}:`, (err as Error).message);
+        writable = false;
+      }
     }, 1000);
   }
 }
