@@ -69,6 +69,12 @@ let warned = false;
  * otherwise Claude when Anthropic credentials are set. Returns undefined when neither is
  * configured or the call fails, and the report falls back to the rule-based verdict.
  */
+/** What /api/health reports about the AI: which provider is configured and how the last call went. Never the key. */
+export const aiStatus: { provider: 'deepseek' | 'anthropic' | 'none'; lastOkAt?: number; lastError?: string; lastErrorAt?: number } = {
+  provider: config.deepseekKey ? 'deepseek' : process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN ? 'anthropic' : 'none',
+};
+const fail = (msg: string) => { aiStatus.lastError = msg; aiStatus.lastErrorAt = Date.now(); console.error('AI review:', msg); };
+
 export async function aiReview(token: TokenInfo, checks: Check[], site?: Site, description?: string): Promise<AiReview | undefined> {
   const prompt = userPrompt(token, checks, site, description);
   if (config.deepseekKey) return deepseekReview(prompt);
@@ -107,17 +113,18 @@ async function deepseekReview(prompt: string): Promise<AiReview | undefined> {
           ],
         }),
       });
-      if (res.status === 401) { console.error('AI review: the DeepSeek API key was rejected'); return undefined; }
-      if (res.status === 402) { console.error('AI review: DeepSeek balance is empty'); return undefined; }
-      if (!res.ok) { console.error(`AI review: DeepSeek error ${res.status}`, (await res.text()).slice(0, 300)); continue; }
+      if (res.status === 401) { fail('DeepSeek rejected the API key (401)'); return undefined; }
+      if (res.status === 402) { fail('DeepSeek balance is empty (402)'); return undefined; }
+      if (!res.ok) { fail(`DeepSeek error ${res.status}: ${(await res.text()).slice(0, 200)}`); continue; }
       const data = await res.json() as { choices?: { message?: { content?: string }; finish_reason?: string }[] };
       const choice = data.choices?.[0];
       const content = choice?.message?.content?.trim();
-      if (!content || choice?.finish_reason === 'length') { console.warn('AI review: empty or cut-off answer, retrying'); continue; }
+      if (!content || choice?.finish_reason === 'length') { fail('DeepSeek returned an empty or cut-off answer'); continue; }
       const review = valid(JSON.parse(content));
-      if (review) return review;
+      if (review) { aiStatus.lastOkAt = Date.now(); return review; }
+      fail('DeepSeek answer did not match the expected shape');
     } catch (err) {
-      console.error('AI review (DeepSeek) failed', err);
+      fail(`DeepSeek call failed: ${(err as Error)?.name === 'TimeoutError' ? 'timed out' : (err as Error)?.message ?? String(err)}`);
     }
   }
   return undefined;

@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { isAddress, type Hex } from 'viem';
 import { resolveToken, type Report } from './analyze.js';
 import { isHolder, newNonce, sessionAddress, signInMessage, signOut, tellBalance, verify } from './auth.js';
+import { aiStatus } from './ai/review.js';
 import { config } from './config.js';
 import { launchFeed, startLaunchWatcher } from './launches.js';
 import { siteCard, tokenCard } from './og.js';
@@ -28,6 +29,13 @@ createServer(async (req, res) => {
     // ---------- API ----------
     if (path === '/api/check') return await check(req, res, url);
     if (path === '/api/launches') return json(res, 200, { launches: launchFeed() });
+    if (path === '/api/health') {
+      return json(res, 200, {
+        ok: true, ai: aiStatus, launchWatcher: config.launchWatcher,
+        rpc: config.rpcUrl.includes('rpc.mainnet.chain.robinhood.com') ? 'public' : 'custom',
+        publicUrl: config.publicUrl || null, vercel: Boolean(process.env.VERCEL),
+      });
+    }
     if (path === '/api/auth/nonce') {
       const address = url.searchParams.get('address') ?? '';
       if (!isAddress(address)) return json(res, 400, { error: 'Bad address' });
