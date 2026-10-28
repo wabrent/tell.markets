@@ -65,7 +65,7 @@ button { font: inherit; color: inherit; }
 .side::-webkit-scrollbar { width: 6px; } .side::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
 
 .tk { display: flex; gap: 12px; align-items: center; }
-.tk-ava { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, var(--pale), #1e4e6c); overflow: hidden; flex: none; }
+.tk-ava { position: relative; width: 40px; height: 40px; font-size: 40px; border-radius: 50%; overflow: hidden; flex: none; }
 .tk-ava img { width: 100%; height: 100%; object-fit: cover; }
 .tk-name { font-weight: 500; font-size: 15px; }
 .tk-full { color: var(--dim); font-weight: 400; font-size: 12px; margin-left: 4px; }
@@ -384,7 +384,7 @@ async function load(q) {
   if (!q) { $('q').focus(); return; }
   $('empty').classList.add('hide');
   $('loading').classList.remove('hide');
-  $('loading').querySelector('.err')?.remove();
+  $('loading').querySelectorAll('.err').forEach(e => e.remove());
   $('loader').classList.remove('failed');
   $('steps').innerHTML = STEPS.map(s => `<li>${s}</li>`).join('');
   let i = 0;
@@ -396,11 +396,13 @@ async function load(q) {
     if (!res.ok) throw new Error(data.error || 'Check failed');
     history.replaceState(null, '', '/app/' + data.token.address);
     renderSide(data);
-    if (data.flow) {
+    if (data.flow && data.flow.nodes.length > 1) {
       startMap(data);
       $('loading').classList.add('hide');
+    } else if (data.degraded) {
+      throw new Error('The network was too busy to load this token’s transfers. Try again in a minute.');
     } else {
-      throw new Error('This token has too much history to map. The report on the left still applies.');
+      throw new Error('This token has no transfers yet, so there is nothing to map.');
     }
   } catch (err) {
     const p = document.createElement('p');
@@ -409,6 +411,12 @@ async function load(q) {
     $('step').innerHTML = '<span>Could not map this token</span>';
     $('loader').classList.add('failed');
     $('loader').appendChild(p);
+    const retry = document.createElement('button');
+    retry.className = 'btn btn-cream err';
+    retry.style.marginTop = '14px';
+    retry.textContent = 'Try again';
+    retry.onclick = () => load(q);
+    p.after(retry);
   } finally {
     clearInterval(ticker);
   }
@@ -446,7 +454,7 @@ function renderSide(r) {
   $('side').innerHTML = `
     <div class="t-${t}">
       <div class="tk">
-        <div class="tk-ava">${img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : ''}</div>
+        <div class="tk-ava">${Tell.avatar(r.token.address, r.token.symbol, img)}</div>
         <div>
           <div class="tk-name">${esc(sym)}${r.token.name ? `<span class="tk-full">${esc(r.token.name)}</span>` : ''}</div>
           <div class="tk-addr" title="Copy address" data-copy="${r.token.address}">${short(r.token.address)} ⧉</div>
@@ -538,7 +546,7 @@ function startMap(r) {
   G = { nodes, links, events: f.events, total: f.totalEvents, lastBlock: f.events.length ? f.events[f.events.length - 1][0] : 0 };
 
   $('map-title').textContent = r.token.symbol ? '$' + r.token.symbol : short(r.token.address);
-  $('map-sub').textContent = `${nodes.length - 1} addresses · ${f.totalEvents.toLocaleString('en-US')} transfers`;
+  $('map-sub').textContent = `${nodes.length - 1} addresses · ${f.totalEvents.toLocaleString('en-US')} ${r.flowPartial ? 'latest transfers (busy token)' : 'transfers'}`;
   particles.length = 0;
   selected = null; $('panel').classList.remove('open');
 

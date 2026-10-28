@@ -28,6 +28,10 @@ export interface Report {
   meta?: LaunchMeta;
   /** Token map for the app. Large, so /api/check leaves it out unless asked. */
   flow?: FlowGraph;
+  /** The map covers only the latest transfers of a very busy token. */
+  flowPartial?: boolean;
+  /** Some data failed to load (usually RPC rate limits); kept only briefly. */
+  degraded?: boolean;
   ms: number;
 }
 
@@ -62,10 +66,15 @@ export async function resolveToken(input: string): Promise<`0x${string}` | undef
 
 export async function analyze(address: `0x${string}`): Promise<Report> {
   const started = Date.now();
-  const [token, pairs] = await Promise.all([
+  let [token, pairs] = await Promise.all([
     readToken(address),
     getTokenPairs(address).catch(() => [] as DexPair[]),
   ]);
+  // a busy RPC can drop these reads; one more try before calling it "not a standard token"
+  if (token.symbol === undefined || token.totalSupply === undefined) {
+    await new Promise(r => setTimeout(r, 1500));
+    token = await readToken(address);
+  }
   const ownPairs = pairs.filter(p => p.baseToken.address.toLowerCase() === address.toLowerCase());
 
   // The site usually comes from the DEX listing; tokens still on a bonding curve only have the
@@ -102,20 +111,27 @@ export async function analyze(address: `0x${string}`): Promise<Report> {
   checks.push(...aiChecks(review, site));
 
   return {
-    token, pairs: ownPairs, checks, facts: onchain.facts, flow: onchain.flow, meta,
+    token, pairs: ownPairs, checks, facts: onchain.facts, flow: onchain.flow, flowPartial: onchain.flowPartial, meta,
     score: score(checks), verdict: review?.verdict || verdict(checks), aiVerdict: Boolean(review?.verdict),
+    // a token we couldn't read or whose history failed to load: show it, but don't trust it for long
+    degraded: onchain.degraded || token.symbol === undefined || token.totalSupply === undefined,
     ms: Date.now() - started,
   };
 }
 
 /** Holders and deployer both come from the token's full transfer history. */
-async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ checks: Check[]; facts: Facts; flow?: FlowGraph; meta?: LaunchMeta }> {
+async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ checks: Check[]; facts: Facts; flow?: FlowGraph; flowPartial?: boolean; meta?: LaunchMeta; degraded?: boolean }> {
   try {
     const { transfers, complete } = await fetchTransfers(token.address);
     if (!complete) {
+      // Busy token: holder and deployer checks need the full history, but the latest transfers
+      // still make a useful map of where the supply is moving now.
+      const recent = await checkHolders(token, transfers).catch(() => undefined);
       return {
-        checks: [{ group: 'holders', status: 'info', title: 'Too much history to map holders', detail: 'this token has more than 40k transfers', risk: 0 }],
+        checks: [{ group: 'holders', status: 'info', title: 'Busy token: holder checks skipped', detail: 'more than 40k transfers; the map shows the latest ones', risk: 0 }],
         facts: {},
+        flow: recent ? buildFlow(token, transfers, recent.facts, undefined, pairs) : undefined,
+        flowPartial: true,
       };
     }
     const mint = transfers.find(t => t.from === zeroAddress);
@@ -137,8 +153,11 @@ async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ check
       meta: await metaP,
     };
   } catch (err) {
-    console.error('on-chain checks failed', err);
-    return { checks: [{ group: 'holders', status: 'info', title: 'Holder data is unavailable right now', risk: 0 }], facts: {} };
+    console.error('on-chain checks failed', (err as Error)?.message ?? err);
+    return {
+      checks: [{ group: 'holders', status: 'info', title: 'Holder data is unavailable right now', detail: 'the network was busy; check again in a minute', risk: 0 }],
+      facts: {}, degraded: true,
+    };
   }
 }
 

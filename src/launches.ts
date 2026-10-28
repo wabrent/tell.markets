@@ -1,7 +1,8 @@
 import { getAddress, type Hex } from 'viem';
 import { readToken } from './checks/contract.js';
-import { cachedReport, getReport, isChecking } from './reports.js';
-import { client, withBackoff } from './sources/rpc.js';
+import { cachedReport, getReport, isChecking, userBusy } from './reports.js';
+import { launchMeta } from './sources/launch.js';
+import { background, client, foregroundBusy, withBackoff } from './sources/rpc.js';
 import { JsonStore } from './store.js';
 
 // Pons V2 factory and its Launch event: topics = [sig, token, curve, deployer]
@@ -18,6 +19,11 @@ export interface Launch {
   at: number; // ms, estimated from block height
   name?: string;
   symbol?: string;
+  image?: string;
+  description?: string;
+  tx?: string;
+  /** Set once the launch call has been read for its metadata. */
+  metaDone?: boolean;
   launchpad: 'Pons';
 }
 
@@ -34,7 +40,7 @@ async function poll() {
   const logs = await withBackoff(() => client.request({
     method: 'eth_getLogs',
     params: [{ address: PONS_FACTORY, topics: [LAUNCH_TOPIC], fromBlock: `0x${from.toString(16)}`, toBlock: `0x${latest.number.toString(16)}` }],
-  })) as { topics: Hex[]; blockNumber: Hex }[];
+  })) as { topics: Hex[]; blockNumber: Hex; transactionHash: Hex }[];
   lastBlock = latest.number;
 
   // newest first, a few at a time, so the top of the feed fills in before the backlog
@@ -43,18 +49,39 @@ async function poll() {
     await Promise.all(fresh.slice(i, i + 8).map(async l => {
       const token = getAddress('0x' + l.topics[1].slice(-40)).toLowerCase();
       const block = BigInt(l.blockNumber);
-      const info = await readToken(token as Hex).catch(() => undefined);
-      launches.set(token, {
+      launches.set(token, await withMeta({
         token,
         deployer: ('0x' + l.topics[3].slice(-40)).toLowerCase(),
         block: block.toString(),
         at: latestSeen.at - Number(latest.number - block) / BLOCKS_PER_SEC * 1000,
-        name: info?.name,
-        symbol: info?.symbol,
+        tx: l.transactionHash,
         launchpad: 'Pons',
-      });
+      }));
     }));
   }
+
+  // launches stored before metadata was read: fill in a few per tick
+  const old = launches.values().filter(l => !l.metaDone).sort((a, b) => b.at - a.at).slice(0, 16);
+  for (const l of old) launches.set(l.token, await withMeta(l));
+}
+
+/** Image, name and symbol come straight from the launch call: one request, before any check runs. */
+async function withMeta(l: Launch): Promise<Launch> {
+  let hash = l.tx as Hex | undefined;
+  if (!hash) {
+    const logs = await withBackoff(() => client.request({
+      method: 'eth_getLogs',
+      params: [{ address: PONS_FACTORY, topics: [LAUNCH_TOPIC, ('0x' + l.token.slice(2).padStart(64, '0')) as Hex], fromBlock: `0x${(BigInt(l.block) - 1n).toString(16)}`, toBlock: `0x${(BigInt(l.block) + 1n).toString(16)}` }],
+    })).catch(() => []) as { transactionHash: Hex }[];
+    hash = logs[0]?.transactionHash;
+  }
+  const meta = hash ? await withBackoff(() => client.getTransaction({ hash: hash! })).then(tx => launchMeta(tx.input)).catch(() => undefined) : undefined;
+  let { name, symbol } = meta ?? {};
+  if (!name || !symbol) {
+    const info = await readToken(l.token as Hex).catch(() => undefined);
+    name ??= info?.name; symbol ??= info?.symbol;
+  }
+  return { ...l, tx: hash, name: name ?? l.name, symbol: symbol ?? l.symbol, image: meta?.image ?? l.image, description: meta?.description ?? l.description, metaDone: true };
 }
 
 /**
@@ -62,6 +89,7 @@ async function poll() {
  * feed fills in without hammering the RPC. A token is re-checked when its report is an hour old.
  */
 async function work() {
+  if (userBusy() || foregroundBusy()) return; // people first
   const day = Date.now() - 24 * 3600_000;
   const next = launches.values()
     .filter(l => l.at > day && !isChecking(l.token))
@@ -73,11 +101,11 @@ async function work() {
 
 export function startLaunchWatcher() {
   const tick = async () => {
-    try { await poll(); } catch (err) { console.error('launch poll failed', (err as Error).message); }
+    try { await background.run(true, poll); } catch (err) { console.error('launch poll failed', (err as Error).message); }
     setTimeout(tick, POLL_MS);
   };
   const loop = async () => {
-    try { await work(); } catch { /* logged above */ }
+    try { await background.run(true, work); } catch { /* logged above */ }
     setTimeout(loop, 3000);
   };
   tick();
@@ -100,7 +128,7 @@ export function launchFeed() {
         checkedAt: c?.at,
         score: r?.score,
         verdict: r?.verdict,
-        image: r?.meta?.image || pair?.info?.imageUrl,
+        image: r?.meta?.image || pair?.info?.imageUrl || l.image,
         holders: r?.facts?.holders,
         liquidity: pair?.liquidity?.usd,
         marketCap: pair?.marketCap,

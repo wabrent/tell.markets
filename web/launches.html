@@ -75,7 +75,8 @@ select.sort { background: var(--ink-2); color: var(--text); border: 1px solid va
 .row.anim.fresh { animation: row-in .55s cubic-bezier(.2,.7,.2,1) both, glow 2.4s ease; }
 @keyframes glow { 0%, 40% { box-shadow: 0 0 0 1px rgba(255,90,95,.6), 0 0 30px -8px rgba(255,90,95,.6); } }
 @media (max-width: 960px) { .row { grid-template-columns: 40px 1fr 80px; } .row .verdict, .row .nums { display: none; } .row .acts { grid-column: 2 / -1; } }
-.ava { width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #d6e4f6, #1e4e6c); overflow: hidden; }
+.ava { position: relative; width: 40px; height: 40px; font-size: 40px; border-radius: 50%; overflow: hidden; transition: transform .35s cubic-bezier(.2,.7,.2,1); }
+.row:hover .ava { transform: rotate(-6deg) scale(1.06); }
 .ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .who b { display: block; font-weight: 500; }
 .who span { font-size: 12px; color: var(--dim); }
@@ -223,7 +224,7 @@ function draw(reset) {
     const d = l.saved != null && l.score ? l.score.value - l.saved : null;
     const anim = reset || state.first || fresh;
     return `<div class="row t-${t}${anim ? ' anim' : ''}${fresh ? ' fresh' : ''}" style="--d:${reset || state.first ? Math.min(i, 12) * 0.035 : 0}s">
-      <div class="ava">${l.image ? `<img src="${esc(l.image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</div>
+      <div class="ava">${Tell.avatar(l.token, l.symbol, l.image)}</div>
       <div class="who"><b>${esc(l.symbol ? '$' + l.symbol : short(l.token))}</b><span>${esc(l.name || '')}</span><span class="age">${l.watch ? 'added ' : ''}${ago(l.at)}</span></div>
       <div class="score">${l.score
         ? `<b>${l.score.value}</b><div class="m"><i data-w="${Math.max(l.score.value, 3)}"${anim ? '' : ` style="width:${Math.max(l.score.value, 3)}%;transition:none"`}></i></div><small>${esc(l.score.label)}${d ? ` <span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span>` : ''}</small>`

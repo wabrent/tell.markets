@@ -1,6 +1,8 @@
 import type { Hex } from 'viem';
 
 export interface LaunchMeta {
+  name?: string;
+  symbol?: string;
   image?: string;
   description?: string;
   website?: string;
@@ -20,7 +22,14 @@ export function launchMeta(input: Hex): LaunchMeta | undefined {
   if (!strings.length) return undefined;
 
   const meta: LaunchMeta = { socials: [] };
-  for (const s of strings) {
+  // Pons passes name then symbol first; a symbol is short and has no spaces
+  let rest = strings;
+  if (strings.length >= 2 && /^\S{1,16}$/.test(strings[1].trim()) && !/^(https?|ipfs):/i.test(strings[0])) {
+    meta.name = strings[0].trim().slice(0, 64);
+    meta.symbol = strings[1].trim();
+    rest = strings.slice(2);
+  }
+  for (const s of rest) {
     const v = s.trim();
     if (/^ipfs:\/\//i.test(v)) { meta.image ??= IPFS_GATEWAY + v.replace(/^ipfs:\/\/(ipfs\/)?/i, ''); continue; }
     if (/^https?:\/\//i.test(v)) {
@@ -37,7 +46,7 @@ export function launchMeta(input: Hex): LaunchMeta | undefined {
     // the description is the longest free-text argument
     if (v.includes(' ') && v.length > (meta.description?.length ?? 0)) meta.description = v.slice(0, 500);
   }
-  return meta.image || meta.website || meta.description || meta.socials.length ? meta : undefined;
+  return meta.name || meta.image || meta.website || meta.description || meta.socials.length ? meta : undefined;
 }
 
 /** Every well-formed ABI string (length word, UTF-8 bytes, zero padding) in the calldata. */

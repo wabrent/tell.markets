@@ -85,6 +85,32 @@
     },
   };
 
+  /* ---------------- token avatar ---------------- */
+  // The token's own image when it has one; otherwise a monogram in the site's style, coloured from
+  // the address so every token keeps the same look everywhere. The monogram sits underneath, so a
+  // broken image simply reveals it.
+  const HUES = [356, 8, 22, 36, 48, 150, 172, 196, 212, 228, 258, 285];
+  const escA = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  Tell.avatar = function (address, symbol, image) {
+    const a = String(address || '0x0').toLowerCase();
+    let h = 0;
+    for (let i = 2; i < a.length; i++) h = (h * 31 + a.charCodeAt(i)) >>> 0;
+    const hue = HUES[h % HUES.length];
+    const letter = (String(symbol || '').replace(/[^\p{L}\p{N}]/gu, '')[0] || '?').toUpperCase();
+    return `<span class="tph" style="--h:${hue};--r:${(h >> 8) % 360}deg">${escA(letter)}</span>`
+      + (image ? `<img class="timg" src="${escA(image)}" alt="" loading="lazy" onerror="this.remove()">` : '');
+  };
+  const s3 = document.createElement('style');
+  s3.textContent = `
+  .tph { position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; color: #fff;
+    font-family: 'Instrument Serif', serif; font-size: 0.55em; line-height: 1; text-shadow: 0 1px 8px rgba(0,0,0,.35);
+    background:
+      repeating-linear-gradient(var(--r), rgba(255,255,255,.07) 0 1px, transparent 1px 4px),
+      radial-gradient(circle at 30% 25%, hsl(var(--h) 62% 58%), hsl(var(--h) 58% 30%) 60%, hsl(var(--h) 60% 16%));
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+  .timg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }`;
+  document.head.appendChild(s3);
+
   /* ---------------- sparkline ---------------- */
   // Risk over time as a small SVG line; red when it rose, green when it fell.
   Tell.sparkline = function (points, w = 120, h = 28) {

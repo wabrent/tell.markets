@@ -67,7 +67,7 @@ main { padding: 32px 0 80px; }
 .card.win { border-color: rgba(79,178,122,.45); box-shadow: 0 0 40px -18px rgba(79,178,122,.7); }
 .win-tag { position: absolute; top: 16px; right: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--green); border: 1px solid rgba(79,178,122,.5); border-radius: 9999px; padding: 3px 9px; }
 .tk { display: flex; gap: 12px; align-items: center; }
-.ava { width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #d6e4f6, #1e4e6c); overflow: hidden; flex: none; }
+.ava { position: relative; width: 46px; height: 46px; font-size: 46px; border-radius: 50%; overflow: hidden; flex: none; }
 .ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .tk b { font-weight: 500; font-size: 17px; display: block; }
 .tk span { font-family: var(--mono); font-size: 11px; color: var(--dim); }
@@ -174,7 +174,7 @@ function card(r, win, i) {
   const hrs = pair?.pairCreatedAt ? (Date.now() - pair.pairCreatedAt) / 36e5 : null;
   return `<div class="card t-${t}${win ? ' win' : ''}" style="--d:${i * 0.08}s">
     ${win ? '<span class="win-tag">Fewer red flags</span>' : ''}
-    <div class="tk"><div class="ava">${img ? `<img src="${esc(img)}" alt="" onerror="this.remove()">` : ''}</div>
+    <div class="tk"><div class="ava">${Tell.avatar(r.token.address, r.token.symbol, img)}</div>
       <div><b>${esc(r.token.symbol ? '$' + r.token.symbol : short(r.token.address))}</b><span>${esc(r.token.name || '')} · ${short(r.token.address)}</span></div></div>
     <div class="big"><b data-to="${r.score.value}">0</b><span>/ 100 risk</span></div>
     <div class="meter"><i data-w="${Math.max(r.score.value, 3)}"></i></div>

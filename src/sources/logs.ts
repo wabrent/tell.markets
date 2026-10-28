@@ -43,11 +43,12 @@ async function pool<T>(tasks: (() => Promise<T>)[], n = CONCURRENCY): Promise<T[
 }
 
 /**
- * Every Transfer of a token since genesis, oldest first. Gives up (complete: false) past
- * `maxLogs`, which only happens for old, busy tokens — not the new launches Tell is for.
+ * Every Transfer of a token since genesis, oldest first. Past `maxLogs` (old, busy tokens) it
+ * stops reaching further back and returns the most recent `maxLogs` with complete: false, which is
+ * still enough to draw a map of recent activity.
  */
 export async function fetchTransfers(token: Hex, maxLogs = 40_000): Promise<{ transfers: Transfer[]; complete: boolean }> {
-  const latest = await client.getBlockNumber();
+  const latest = await withBackoff(() => client.getBlockNumber());
   let total = 0;
 
   const getRange = async (lo: bigint, hi: bigint): Promise<Transfer[]> => {
@@ -62,22 +63,23 @@ export async function fetchTransfers(token: Hex, maxLogs = 40_000): Promise<{ tr
     } catch (e) {
       if (e instanceof TooMany) throw e;
       // more than 10k logs in this range: halve it
+      // newer half first, so when the cap hits we have kept the recent activity
       if (/exceeds limit|too many results|query returned more/i.test(errText(e)) && hi > lo) {
         const mid = (lo + hi) / 2n;
-        return [...(await getRange(lo, mid)), ...(await getRange(mid + 1n, hi))];
+        const newer = await getRange(mid + 1n, hi);
+        const older = await getRange(lo, mid).catch(err => { if (err instanceof TooMany) return []; throw err; });
+        return [...older, ...newer];
       }
       throw e;
     }
   };
 
-  try {
-    const parts = await pool(ranges(0n, latest).map(([lo, hi]) => () => getRange(lo, hi)));
-    const transfers = parts.flat().sort((a, b) => (a.block === b.block ? a.logIndex - b.logIndex : a.block < b.block ? -1 : 1));
-    return { transfers, complete: true };
-  } catch (e) {
-    if (e instanceof TooMany) return { transfers: [], complete: false };
-    throw e;
-  }
+  // ranges run newest first; once the cap is hit, older ranges come back empty instead of failing
+  const parts = await pool(ranges(0n, latest).map(([lo, hi]) => () =>
+    getRange(lo, hi).catch(err => { if (err instanceof TooMany) return [] as Transfer[]; throw err; })));
+  const sorted = parts.flat().sort((a, b) => (a.block === b.block ? a.logIndex - b.logIndex : a.block < b.block ? -1 : 1));
+  const complete = total <= maxLogs;
+  return { transfers: complete ? sorted : sorted.slice(-maxLogs), complete };
 }
 
 /** Raw logs of one event from one contract, filtered by topics, across the whole chain. */
