@@ -132,6 +132,7 @@ async function me(address: string | undefined) {
   return {
     address: address ?? null,
     tokenLive: Boolean(config.tellToken),
+    tellToken: config.tellToken || null,
     holds,
     holderMin: config.holderMin,
     holder: Boolean(config.tellToken) && holds >= config.holderMin,

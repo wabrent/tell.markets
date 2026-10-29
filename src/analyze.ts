@@ -12,7 +12,8 @@ import { client, withBackoff } from './sources/rpc.js';
 import type { Check, TokenInfo } from './checks/types.js';
 import { getPair, getTokenPairs, type DexPair } from './sources/dexscreener.js';
 import { buildFlow, type FlowGraph } from './flow.js';
-import { knownAsset } from './known.js';
+import { config } from './config.js';
+import { knownAsset, tellIdentity } from './known.js';
 import { score, type Score } from './scoring.js';
 
 export interface Report {
@@ -104,6 +105,20 @@ export async function analyze(address: `0x${string}`): Promise<Report> {
       c.detail = 'expected for this asset';
     }
     checks.unshift({ group: 'contract', status: 'ok', title: `Recognized asset: ${known}`, risk: 0 });
+  }
+
+  // Tell's own token is the one people will try to fake
+  const tell = tellIdentity(address, token.name, token.symbol);
+  if (tell === 'official') {
+    checks.unshift({ group: 'contract', status: 'ok', title: 'Official $TELL token', detail: 'the address published on tell.markets', risk: 0 });
+  } else if (tell === 'impostor') {
+    checks.unshift({
+      group: 'contract', status: 'bad', title: 'Fake $TELL: not the official token',
+      detail: config.tellToken
+        ? `the only official $TELL is ${config.tellToken.slice(0, 6)}…${config.tellToken.slice(-4)}, published on tell.markets`
+        : 'Tell has not launched a token yet; anything called TELL is an impersonation',
+      risk: 80, critical: true,
+    });
   }
 
   // The AI reads the site and sees every other finding, so it runs last.

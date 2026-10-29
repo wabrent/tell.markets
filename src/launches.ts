@@ -4,6 +4,7 @@ import { cachedReport, getReport, isChecking, userBusy } from './reports.js';
 import { launchMeta } from './sources/launch.js';
 import { background, client, foregroundBusy, withBackoff } from './sources/rpc.js';
 import { JsonStore } from './store.js';
+import { tellIdentity } from './known.js';
 
 // Pons V2 factory and its Launch event: topics = [sig, token, curve, deployer]
 const PONS_FACTORY = '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
@@ -170,6 +171,7 @@ export function launchFeed() {
       return {
         ...l,
         checking: isChecking(l.token),
+        impostor: tellIdentity(l.token, l.name, l.symbol) === 'impostor',
         checkedAt: c?.at,
         score: r?.score,
         verdict: r?.verdict,

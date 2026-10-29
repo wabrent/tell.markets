@@ -1,3 +1,5 @@
+import { config } from './config.js';
+
 // Established assets that legitimately keep owner powers (minting, pausing, upgrades). Matched
 // by address only: names are free to copy, so "• Robinhood Token" in a name proves nothing.
 export const KNOWN_ASSETS: Record<string, string> = {
@@ -11,3 +13,16 @@ export const KNOWN_ASSETS: Record<string, string> = {
 };
 
 export const knownAsset = (address: string) => KNOWN_ASSETS[address.toLowerCase()];
+
+const norm = (s?: string) => (s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * Anyone can launch a token called TELL on Pons. The only real one is the address in TELL_TOKEN;
+ * every other token that borrows the name is flagged, and before launch they are all fakes.
+ */
+export function tellIdentity(address: string, name?: string, symbol?: string): 'official' | 'impostor' | undefined {
+  if (config.tellToken && address.toLowerCase() === config.tellToken) return 'official';
+  const sym = norm(symbol), nm = norm(name);
+  const borrows = sym === 'tell' || sym === 'tellmarkets' || nm === 'tell' || nm === 'telltoken' || nm.includes('tellmarkets');
+  return borrows ? 'impostor' : undefined;
+}

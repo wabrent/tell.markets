@@ -207,6 +207,17 @@ tr:last-child td { border-bottom: 0; }
 @media (min-width: 768px) { .token-card { grid-template-columns: repeat(3, 1fr); } }
 .token-card div { background: var(--ink); padding: 24px; }
 .token-card b { display: block; font-family: var(--serif); font-weight: 400; font-size: 30px; margin: 10px 0 6px; }
+.official { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center;
+  border: 1px solid rgba(255,90,95,.35); background: linear-gradient(90deg, rgba(255,90,95,.08), transparent 70%); border-radius: 12px; padding: 22px 24px; }
+.official.live { border-color: rgba(79,178,122,.45); background: linear-gradient(90deg, rgba(79,178,122,.08), transparent 70%); }
+.off-l { max-width: 640px; }
+.off-l b { display: block; font-family: var(--serif); font-weight: 400; font-size: 32px; margin: 8px 0 6px; }
+.off-l p { color: var(--muted); font-size: 14px; }
+.off-r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.off-r[hidden] { display: none; }
+.off-r code { font-family: var(--mono); font-size: 13px; background: rgba(255,255,255,.05); border: 1px solid var(--line-2); border-radius: 9999px; padding: 8px 14px; word-break: break-all; }
+.off-r button, .off-r a { border: 1px solid var(--line-2); background: none; color: var(--text); border-radius: 9999px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+.off-r button:hover, .off-r a:hover { border-color: var(--text); }
 .token-card p { color: var(--muted); font-size: 14px; }
 
 details { border-top: 1px solid var(--line); padding: 22px 0; }
@@ -480,6 +491,18 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
       <div><span class="label">Holders</span><b>Unlimited</b><p>Plus alerts on new launches. Link a wallet with one signature, no transaction.</p></div>
       <div><span class="label">Revenue</span><b>Buybacks</b><p>A share of paid checks buys $TELL back, from a public address.</p></div>
     </div>
+    <div class="official" id="official">
+      <div class="off-l">
+        <span class="label">Official contract</span>
+        <b id="off-title">No $TELL token yet.</b>
+        <p id="off-text">The only official address will be posted here and in the pinned post on our X account. Anything called TELL before that is a fake, and Tell flags it in every check.</p>
+      </div>
+      <div class="off-r" id="off-addr" hidden>
+        <code id="off-ca"></code>
+        <button type="button" id="off-copy">Copy</button>
+        <a id="off-report" href="#">Check it →</a>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -720,6 +743,19 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 document.querySelectorAll('[data-count]').forEach(el => {
   const to = +el.dataset.count;
   if (to > 0 && !calm) setTimeout(() => countUp(el, to, 900), 1200);
+});
+
+// Official $TELL: shows the real contract once TELL_TOKEN is set, a warning about fakes until then
+document.addEventListener('tell:me', e => {
+  const ca = e.detail?.tellToken;
+  if (!ca) return;
+  document.getElementById('official').classList.add('live');
+  document.getElementById('off-title').textContent = 'The official $TELL.';
+  document.getElementById('off-text').textContent = 'This is the only real contract. Any other token called TELL is a fake, and Tell flags it in every check.';
+  document.getElementById('off-addr').hidden = false;
+  document.getElementById('off-ca').textContent = ca;
+  document.getElementById('off-report').href = '/t/' + ca;
+  document.getElementById('off-copy').onclick = ev => navigator.clipboard?.writeText(ca).then(() => { ev.target.textContent = 'Copied'; });
 });
 
 // Shareable link: /t/0x… runs the check on load.

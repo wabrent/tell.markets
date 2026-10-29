@@ -79,6 +79,8 @@ select.sort { background: var(--ink-2); color: var(--text); border: 1px solid va
 .row:hover .ava { transform: rotate(-6deg) scale(1.06); }
 .ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .who b { display: block; font-weight: 500; }
+.fake { font-style: normal; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: #fff; background: var(--bad); border-radius: 4px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; animation: fake-pulse 1.6s ease-in-out infinite; }
+@keyframes fake-pulse { 50% { box-shadow: 0 0 0 4px rgba(255,90,95,.25); } }
 .who span { font-size: 12px; color: var(--dim); }
 .who .age { font-family: var(--mono); font-size: 10.5px; color: var(--muted); margin-left: 6px; }
 .score { display: grid; gap: 6px; }
@@ -269,7 +271,7 @@ function draw(reset) {
     const anim = reset || state.first || fresh;
     return `<div class="row t-${t}${anim ? ' anim' : ''}${fresh ? ' fresh' : ''}" style="--d:${reset || state.first ? Math.min(i, 12) * 0.035 : 0}s">
       <div class="ava">${Tell.avatar(l.token, l.symbol, l.image)}</div>
-      <div class="who"><b>${esc(l.symbol ? '$' + l.symbol : short(l.token))}</b><span>${esc(l.name || '')}</span><span class="age">${l.watch ? 'added ' : ''}${ago(l.at)}</span></div>
+      <div class="who"><b>${esc(l.symbol ? '$' + l.symbol : short(l.token))}${l.impostor ? ' <i class="fake" title="Not the official $TELL. The only real address is published on tell.markets.">FAKE $TELL</i>' : ''}</b><span>${esc(l.name || '')}</span><span class="age">${l.watch ? 'added ' : ''}${ago(l.at)}</span></div>
       <div class="score">${l.score
         ? `<b>${l.score.value}</b><div class="m"><i data-w="${Math.max(l.score.value, 3)}"${anim ? '' : ` style="width:${Math.max(l.score.value, 3)}%;transition:none"`}></i></div><small>${esc(l.score.label)}${d ? ` <span class="delta ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'}${Math.abs(d)}</span>` : ''}</small>`
         : l.checking || state.busy.has(l.token) ? '<span class="checking"><i></i>checking</span>'
