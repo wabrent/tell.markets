@@ -650,6 +650,7 @@ function render(r) {
   out.push(`<button type="button" id="watch">${Tell.watch.has(r.token.address) ? '★ Watching' : '☆ Watch'}</button>`);
   out.push(`<a href="/compare?a=${r.token.address}">Compare</a>`);
   out.push(`<button type="button" id="tweet">Share on X</button>`);
+  out.push(`<button type="button" id="card">Download card ↓</button>`);
   out.push(`<button type="button" id="share">Copy link</button>`);
   links.innerHTML = out.join('');
   const link = `${location.origin}/t/${r.token.address}`;
@@ -668,6 +669,7 @@ function render(r) {
     const text = `${sym} scored ${r.score.value}/100 risk on Tell.\n\n${r.verdict}\n\n`;
     open('https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(link), '_blank', 'noopener');
   };
+  document.getElementById('card').onclick = e => Tell.shareCard(r, e.currentTarget);
 }
 
 function countUp(el, to, ms) {

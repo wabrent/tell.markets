@@ -480,6 +480,7 @@ function renderSide(r) {
     <div class="side-actions">
       <button type="button" id="watch">${Tell.watch.has(r.token.address) ? '★ Watching' : '☆ Watch'}</button>
       <button type="button" id="tweet">Share on X</button>
+      <button type="button" id="card">Card ↓</button>
     </div>
     <p class="disclaimer">Not financial advice. Tell describes what it finds and can be wrong.</p>`;
 
@@ -491,6 +492,7 @@ function renderSide(r) {
     const link = `${location.origin}/t/${r.token.address}`;
     open('https://x.com/intent/post?text=' + encodeURIComponent(`${sym} scored ${r.score.value}/100 risk on Tell.\n\n${r.verdict}\n\n`) + '&url=' + encodeURIComponent(link), '_blank', 'noopener');
   };
+  $('card').onclick = e => Tell.shareCard(r, e.currentTarget);
 
   requestAnimationFrame(() => { $('meter').style.width = Math.max(r.score.value, 3) + '%'; });
   countUp($('score-n'), r.score.value, 1000);

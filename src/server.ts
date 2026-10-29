@@ -60,10 +60,18 @@ createServer(async (req, res) => {
     if (path === '/og/site.png') return png(res, cards.get('site') ?? cards.set('site', siteCard()).get('site')!);
     const og = path.match(/^\/og\/(0x[a-fA-F0-9]{40})\.png$/);
     if (og) {
-      const c = cachedReport(og[1]);
+      // ?dl=1 is a person saving the card to attach to a post: build the report if this instance
+      // doesn't have it, and send it as a file. Crawlers (no dl) get the site card instead of waiting.
+      const download = url.searchParams.has('dl');
+      let c = cachedReport(og[1]);
+      if (!c && download) { await getReport(og[1] as Hex); c = cachedReport(og[1]); }
       if (!c) return png(res, cards.get('site') ?? cards.set('site', siteCard()).get('site')!);
       const key = `${og[1].toLowerCase()}:${c.at}`;
       if (!cards.has(key)) { if (cards.size > 300) cards.clear(); cards.set(key, tokenCard(c.report)); }
+      if (download) {
+        const name = `tell-${(c.report.token.symbol || og[1].slice(0, 8)).replace(/[^\w-]/g, '')}.png`;
+        res.setHeader('content-disposition', `attachment; filename="${name}"`);
+      }
       return png(res, cards.get(key)!);
     }
 

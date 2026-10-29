@@ -111,6 +111,38 @@
   .timg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }`;
   document.head.appendChild(s3);
 
+  /* ---------------- share card ---------------- */
+  // X's post link can't carry an image, so the card is saved (desktop) or handed to the phone's
+  // share sheet together with the text (mobile), ready to attach to the post.
+  Tell.shareCard = async function (r, btn) {
+    const sym = r.token.symbol ? '$' + r.token.symbol : 'token';
+    const label = btn?.textContent;
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing card…'; }
+    try {
+      const res = await fetch(`/og/${r.token.address}.png?dl=1`);
+      if (!res.ok) throw new Error('card failed');
+      const blob = await res.blob();
+      const file = new File([blob], `tell-${sym.replace(/[^\w-]/g, '')}.png`, { type: 'image/png' });
+      const link = `${location.origin}/t/${r.token.address}`;
+      const text = `${sym} scored ${r.score.value}/100 risk on Tell.\n\n${r.verdict}`;
+      const touch = matchMedia('(pointer: coarse)').matches;
+      if (touch && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text: `${text}\n\n${link}` }).catch(() => {});
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = file.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+      }
+      if (btn) btn.textContent = touch ? label : 'Card saved ✓';
+    } catch {
+      if (btn) btn.textContent = 'Try again';
+    } finally {
+      if (btn) { btn.disabled = false; setTimeout(() => { btn.textContent = label; }, 2500); }
+    }
+  };
+
   /* ---------------- sparkline ---------------- */
   // Risk over time as a small SVG line; red when it rose, green when it fell.
   Tell.sparkline = function (points, w = 120, h = 28) {
