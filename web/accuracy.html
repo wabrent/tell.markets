@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accuracy — Tell</title>
+<meta name="description" content="Does a Tell score mean anything? What happened to every token 2 to 7 days after Tell scored it, by risk level. Method, caveats and raw data.">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/assets/tell.js"></script>
+<style>
+:root {
+  --ink: #0b0b0c; --ink-2: #121213; --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+  --text: #ece9e2; --muted: #9a958d; --dim: #5f5b55; --red: #8e0c14; --red-deep: #5c070c;
+  --green: #4fb27a; --mid: #d8c24a; --amber: #e3a540; --bad: #ff5a5f;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--ink); }
+body { background: var(--ink); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 768px) { .wrap { padding: 0 40px; } }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.band { position: relative; overflow: hidden; padding-bottom: 48px;
+  background: radial-gradient(70% 140% at 85% 0%, rgba(255,40,40,0.22), transparent 60%), linear-gradient(120deg, var(--red-deep), var(--red) 60%, #7a0a12); }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 12px; }
+.brand { font-family: var(--serif); font-size: 22px; letter-spacing: .32em; display: inline-flex; align-items: center; gap: 12px; color: #fff; }
+.logo { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+.links { display: none; gap: 26px; font-size: 13px; color: rgba(255,255,255,.85); }
+.links a.on { color: #fff; text-decoration: underline; text-underline-offset: 6px; }
+@media (min-width: 900px) { .links { display: flex; } }
+.band h1 { font-family: var(--serif); font-weight: 400; font-size: 52px; line-height: .95; color: #fff; margin-top: 16px; }
+@media (min-width: 768px) { .band h1 { font-size: 80px; } }
+.band h1 em { font-style: italic; }
+.band .label { color: rgba(255,255,255,.75); }
+.band p { color: rgba(255,255,255,.88); max-width: 680px; margin-top: 18px; font-size: 16px; }
+.headline { margin-top: 30px; font-family: var(--serif); font-size: 30px; line-height: 1.15; color: #fff; max-width: 820px; }
+@media (min-width: 768px) { .headline { font-size: 38px; } }
+.headline b { font-weight: 400; font-style: italic; }
+main.wrap { padding-top: 48px; padding-bottom: 96px; }
+h2 { font-family: var(--serif); font-weight: 400; font-size: 38px; margin: 56px 0 14px; line-height: 1; }
+h2:first-child { margin-top: 0; }
+h2 em { font-style: italic; }
+.sub { color: var(--muted); max-width: 720px; margin-bottom: 20px; }
+.chart { border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 18px; }
+.bar-row { display: grid; grid-template-columns: 112px 1fr 64px; gap: 14px; align-items: center; }
+@media (max-width: 560px) { .bar-row { grid-template-columns: 84px 1fr 54px; gap: 10px; } }
+.bar-row .who b { display: block; font-weight: 500; text-transform: capitalize; }
+.bar-row .who span { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+.track { height: 22px; border-radius: 6px; background: rgba(255,255,255,.04); overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 6px; background: var(--c); transition: width 1.1s cubic-bezier(.2,.7,.2,1); }
+.val { font-family: var(--serif); font-size: 26px; text-align: right; }
+.t-low { --c: var(--green); } .t-medium { --c: var(--mid); } .t-caution { --c: var(--amber); } .t-high { --c: var(--bad); }
+.chart-note { font-size: 12.5px; color: var(--dim); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 8px; }
+.cols { display: grid; gap: 16px; }
+@media (min-width: 900px) { .cols { grid-template-columns: 1fr 1fr; } }
+.box { border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.box dl { display: grid; gap: 12px; }
+.box dt { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.box dd { color: #cfcac2; font-size: 14.5px; }
+.good { border-color: rgba(227,165,64,.35); background: linear-gradient(160deg, rgba(227,165,64,.06), transparent 60%); }
+.good ul { padding-left: 18px; display: grid; gap: 10px; color: #cfcac2; font-size: 14.5px; }
+.btn { display: inline-flex; gap: 8px; align-items: center; border-radius: 9999px; padding: 11px 20px; background: var(--text); color: var(--ink); font-weight: 500; margin-top: 18px; }
+.collecting { border: 1px dashed var(--line-2); border-radius: 14px; padding: 28px; color: var(--muted); }
+footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body>
+<header class="band">
+  <nav>
+    <div class="wrap">
+      <a class="brand" href="/"><img class="logo" src="/assets/logo.webp" alt="" width="34" height="34">TELL</a>
+      <div class="links"><a href="/">Check</a><a href="/launches">Launches</a><a href="/compare">Compare</a><a href="/app">Token map</a><a href="/accuracy" class="on">Accuracy</a><a href="/docs">API</a><a href="/proof">Proof</a></div>
+      <div data-wallet></div>
+    </div>
+  </nav>
+  <div class="wrap">
+    <span class="label">Accuracy · <span id="h-sample">measuring</span></span>
+    <h1>Does the score <em>mean anything?</em></h1>
+    <p>Every token Tell scores is looked at again 2 to 7 days later: is it still trading, with liquidity you could sell into? Here is what happened, by the risk level Tell gave it on day one.</p>
+    <div class="headline" id="headline"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="body">
+    <div class="collecting">Loading the numbers…</div>
+  </div>
+
+  <h2>How it is <em>measured.</em></h2>
+  <div class="cols">
+    <div class="box">
+      <dl id="method">
+        <dt>Score</dt><dd>The first score Tell gave the token, before anyone knew how it would end.</dd>
+        <dt>Outcome</dt><dd>Each token is looked at once, 2 to 7 days after its first check, and the result is frozen.</dd>
+        <dt>Still trading</dt><dd>Has a DEX pool with at least $5,000 of liquidity at that moment.</dd>
+        <dt>Source</dt><dd>DexScreener for pools and liquidity; Tell's own score history for scores.</dd>
+        <dt>Excluded</dt><dd>Stablecoins, WETH and tokenized stocks Tell recognizes.</dd>
+      </dl>
+    </div>
+    <div class="box good">
+      <span class="label" style="color:var(--amber)">Good to know</span>
+      <ul id="caveats" style="margin-top:14px">
+        <li>Survival is not safety: a token can be alive and still be a bad buy, or die without any wrongdoing.</li>
+        <li>Most launches never reach a pool, so even low-risk tokens die often. Compare the levels with each other, not with zero.</li>
+        <li>Older scores were made by older versions of Tell; the checks keep improving.</li>
+      </ul>
+    </div>
+  </div>
+  <a class="btn" href="/api/v1/accuracy/raw">Download the raw data <span>↓</span></a>
+</main>
+
+<footer><div class="wrap">© 2026 Tell · tell.markets · Not financial advice.</div></footer>
+
+<script>
+const fmt = n => n.toLocaleString('en-US');
+const day = t => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+const usd = n => n == null ? '—' : n >= 1000 ? '$' + (n / 1000).toFixed(n >= 1e4 ? 0 : 1) + 'k' : '$' + n;
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+fetch('/api/v1/accuracy').then(r => r.json()).then(a => {
+  const body = document.getElementById('body');
+  document.getElementById('caveats').innerHTML = a.caveats.map(c => `<li>${esc(c)}</li>`).join('');
+  if (a.tokens < 100) {
+    document.getElementById('h-sample').textContent = 'collecting data';
+    body.innerHTML = `<div class="collecting">Tell has evaluated ${fmt(a.tokens)} tokens so far. The comparison appears once at least 100 tokens are 2 days past their first check.</div>`;
+    return;
+  }
+  document.getElementById('h-sample').textContent = `${fmt(a.tokens)} tokens · scored ${day(a.from)} – ${day(a.to)}`;
+  const [low, , , high] = a.buckets;
+  if (a.lift && low.tokens && high.tokens) {
+    // said plainly either way: if the score stops separating outcomes, this page should show it
+    document.getElementById('headline').innerHTML = a.lift > 1
+      ? `Tokens Tell called <b>low risk</b> were still trading <b>${a.lift}×</b> as often as the ones it called <b>high risk</b>: ${low.alivePct}% against ${high.alivePct}%.`
+      : `Right now low-risk and high-risk tokens survive at similar rates (${low.alivePct}% against ${high.alivePct}%). The score is not separating them yet.`;
+  }
+  const max = Math.max(...a.buckets.map(b => b.alivePct ?? 0), 1);
+  body.innerHTML = `
+    <h2>Still trading <em>after 2–7 days.</em></h2>
+    <p class="sub">Share of tokens with a pool and at least $5k of liquidity, grouped by the first score Tell gave them.</p>
+    <div class="chart">
+      ${a.buckets.map(b => `<div class="bar-row t-${b.level}">
+        <div class="who"><b>${b.level}</b><span>${b.range} · ${fmt(b.tokens)}</span></div>
+        <div class="track"><div class="fill" data-w="${b.tokens ? (b.alivePct / max) * 100 : 0}"></div></div>
+        <div class="val">${b.tokens ? b.alivePct + '%' : '—'}</div></div>`).join('')}
+      <div class="chart-note">Bars are scaled to the highest level. Levels with few tokens move a lot from week to week.</div>
+    </div>
+    <h2>The <em>numbers.</em></h2>
+    <div class="tbl"><table>
+      <tr><th>Risk level</th><th class="num">Tokens</th><th class="num">Reached a pool</th><th class="num">Still trading</th><th class="num">Dead</th><th class="num">Median liquidity (alive)</th></tr>
+      ${a.buckets.map(b => `<tr class="t-${b.level}"><td><span class="dot"></span>${b.level} <span style="color:var(--dim);font-size:12px">${b.range}</span></td>
+        <td class="num">${fmt(b.tokens)}</td><td class="num">${b.reachedPoolPct ?? '—'}%</td><td class="num">${b.alivePct ?? '—'}%</td>
+        <td class="num">${b.deadPct ?? '—'}%</td><td class="num">${usd(b.medianLiquidityOfAliveUsd)}</td></tr>`).join('')}
+    </table></div>`;
+  requestAnimationFrame(() => setTimeout(() => document.querySelectorAll('.fill').forEach(f => f.style.width = f.dataset.w + '%'), 60));
+}).catch(() => { document.getElementById('body').innerHTML = '<div class="collecting">Could not load the numbers right now.</div>'; });
+</script>
+</body>
+</html>

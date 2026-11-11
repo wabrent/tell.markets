@@ -8,7 +8,8 @@ const DEGRADED_MS = 60_000;
 
 // Reports survive restarts; the score history is what lets a report show how risk moved.
 const cache = new JsonStore<{ at: number; report: Report }>('reports.json', 400);
-const history = new JsonStore<{ t: number; s: number }[]>('history.json', 5000);
+// ~1,600 Pons launches a day: room for about a month, which the accuracy tracker needs
+const history = new JsonStore<{ t: number; s: number }[]>('history.json', 50_000);
 const inflight = new Map<string, Promise<Report>>();
 let userChecks = 0;
 
@@ -56,4 +57,8 @@ export const userBusy = () => userChecks > 0;
 /** Whatever we have on file, however old. Used by lists that must not trigger checks. */
 export const cachedReport = (address: string) => cache.get(address.toLowerCase());
 export const scoreHistory = (address: string): Point[] => history.get(address.toLowerCase()) ?? [];
+/** How long recent full checks took, in ms, for the live stats strip. */
+export const recentCheckMs = () => cache.values().filter(c => !c.report.degraded && Date.now() - c.at < 24 * 3600_000).map(c => c.report.ms);
+/** First recorded score of every token, for the accuracy tracker. */
+export const firstScores = () => history.entries().map(([token, h]) => ({ token, ...h[0] })).filter(f => f.t);
 export const isChecking = (address: string) => inflight.has(address.toLowerCase());

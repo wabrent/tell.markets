@@ -7,6 +7,8 @@ import { createKey, keyFrom, keyIsHolder, keysOf } from './keys.js';
 import { launchFeed } from './launches.js';
 import { proofFor, proofSummary, tellBurned } from './proof.js';
 import { fullCheck, quickCheck, type Answer } from './quick.js';
+import { accuracyRows, accuracySummary } from './accuracy.js';
+import { recentCheckMs } from './reports.js';
 import { paymentResponseHeader, paymentsEnabled, readPayment, requirements, revenue, sendPaymentRequired, settlePayment, USDG, verifyPayment } from './x402.js';
 
 /*
@@ -88,6 +90,21 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, url: 
   }
 
   if (path === '/api/v1/pricing') { json(res, 200, pricing()); return true; }
+  if (path === '/api/v1/accuracy') { json(res, 200, accuracySummary()); return true; }
+  if (path === '/api/v1/accuracy/raw') {
+    res.setHeader('content-disposition', 'attachment; filename="tell-accuracy.json"');
+    json(res, 200, { ...accuracySummary(), rows: accuracyRows() });
+    return true;
+  }
+  if (path === '/api/v1/stats') { json(res, 200, stats()); return true; }
+  if (path === '/api/v1/token') {
+    json(res, 200, {
+      live: Boolean(config.tellToken), token: config.tellToken || null, chainId: 4663, launchpad: 'Pons (ponsfamily.com)',
+      holderMin: config.holderMin, buybackShare: config.buybackShare, treasury: config.payTo || null,
+      payments: paymentsEnabled(), priceFull: config.priceFull, revenue: revenue(), burned: await tellBurned(),
+    });
+    return true;
+  }
   if (path === '/api/v1/proof') { json(res, 200, { ...proofSummary(), revenue: revenue(), treasury: config.payTo || null, payments: paymentsEnabled(), tell: await tellBurned() }); return true; }
   const pm = path.match(/^\/api\/v1\/proof\/(0x[a-fA-F0-9]{40})$/);
   if (pm) { json(res, 200, { token: getAddress(pm[1]), verdicts: proofFor(pm[1]) }); return true; }
@@ -126,6 +143,20 @@ async function paidFull(req: IncomingMessage, res: ServerResponse, address: `0x$
   res.setHeader('x-payment-response', paymentResponseHeader(s.tx, s.payer));
   res.setHeader('payment-response', paymentResponseHeader(s.tx, s.payer));
   json(res, 200, summary(answer, base));
+}
+
+/** Live numbers for the homepage strip; cheap, no RPC. */
+function stats() {
+  const feed = launchFeed();
+  const ms = recentCheckMs().sort((a, b) => a - b);
+  const acc = accuracySummary();
+  return {
+    launches24h: feed.length,
+    checked24h: feed.filter(l => l.score).length,
+    medianCheckSeconds: ms.length ? Math.round(ms[Math.floor(ms.length / 2)] / 1000) : null,
+    verdictsOnRecord: proofSummary().verdicts,
+    accuracy: { tokens: acc.tokens, lift: acc.lift },
+  };
 }
 
 /** Takes one free full check from the caller's daily allowance; false when it is used up. */
@@ -173,6 +204,10 @@ function index(base: string) {
       'GET /api/v1/pricing': 'what is free and what costs USDG',
       'GET /api/v1/proof': 'verdict ledger and x402 revenue',
       'GET /api/v1/proof/0x…': 'recorded verdicts for one token with Merkle proofs',
+      'GET /api/v1/accuracy': 'how tokens fared 2-7 days later, by the risk level Tell gave them',
+      'GET /api/v1/accuracy/raw': 'every evaluated token, downloadable',
+      'GET /api/v1/stats': 'live numbers: launches, checks, verdicts',
+      'GET /api/v1/token': '$TELL: contract, buyback share, revenue, burns',
     },
     pricing: pricing(),
   };

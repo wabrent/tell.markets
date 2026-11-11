@@ -11,6 +11,7 @@ import { cachedReport, getReport, scoreHistory } from './reports.js';
 import { handleApi } from './api.js';
 import { handleMcp } from './mcp.js';
 import { startProofLedger } from './proof.js';
+import { startAccuracy } from './accuracy.js';
 import { startTelegram } from './bots/telegram.js';
 import { startX } from './bots/x.js';
 import { paymentsEnabled } from './x402.js';
@@ -22,6 +23,8 @@ const PAGES: Record<string, URL> = {
   compare: new URL('../web/compare.html', import.meta.url),
   docs: new URL('../web/docs.html', import.meta.url),
   proof: new URL('../web/proof.html', import.meta.url),
+  accuracy: new URL('../web/accuracy.html', import.meta.url),
+  token: new URL('../web/token.html', import.meta.url),
 };
 const TYPES: Record<string, string> = { webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', js: 'text/javascript; charset=utf-8' };
 const RATE_LIMIT = 20; // checks per IP per minute
@@ -96,6 +99,8 @@ createServer(async (req, res) => {
     if (path === '/compare') return page(req, res, 'compare');
     if (path === '/docs') return page(req, res, 'docs');
     if (path === '/proof') return page(req, res, 'proof');
+    if (path === '/accuracy') return page(req, res, 'accuracy');
+    if (path === '/token') return page(req, res, 'token');
     if (path === '/robots.txt') { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('User-agent: *\nAllow: /\n'); }
     if (path === '/llms.txt') { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); return res.end(llmsTxt(config.publicUrl || 'https://tell.markets')); }
 
@@ -117,6 +122,7 @@ createServer(async (req, res) => {
   if (config.launchWatcher) startLaunchWatcher();
   const site = config.publicUrl || `http://localhost:${config.port}`;
   startProofLedger();
+  startAccuracy();
   startTelegram(site);
   startX(site);
   console.log(`x402 payments: ${paymentsEnabled() ? `on, ${config.priceFull} USDG per full check -> ${config.payTo}` : 'off (set X402_PAY_TO and X402_SETTLER_KEY)'}`);

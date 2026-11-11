@@ -325,8 +325,9 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
       <a href="/compare">Compare</a>
       <a href="#agents">For agents</a>
       <a href="/docs">API</a>
+      <a href="/accuracy">Accuracy</a>
       <a href="/proof">Proof</a>
-      <a href="#token">$TELL</a>
+      <a href="/token">$TELL</a>
     </div>
     <div class="nav-right">
       <div data-wallet></div>
@@ -353,9 +354,10 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
       <a class="btn btn-ghost" href="/app">Open the token map <span class="arr">↗</span></a>
     </div>
     <div class="stats fade-up" style="--d:1.15s">
-      <div class="stat"><b>~<span data-count="10">10</span>s</b><span class="label">to check</span></div>
-      <div class="stat"><b data-count="5">5</b><span class="label">check groups</span></div>
-      <div class="stat"><b>$<span data-count="0">0</span></b><span class="label">no sign-up</span></div>
+      <div class="stat"><b data-live="checked24h">—</b><span class="label">launches checked today</span></div>
+      <div class="stat"><b><span data-live="medianCheckSeconds">—</span>s</b><span class="label">median full check</span></div>
+      <div class="stat"><b data-live="verdictsOnRecord">—</b><span class="label">verdicts on record</span></div>
+      <div class="stat"><a href="/accuracy" style="text-decoration:none"><b><span data-live="lift">—</span>×</b><span class="label">low vs high risk survival ↗</span></a></div>
     </div>
   </div>
   <span class="credit">Head of an athlete · The Met, CC0</span>
@@ -531,6 +533,7 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
       <div><span class="label">Revenue</span><b>Buyback &amp; burn</b><p>A share of x402 revenue buys $TELL on the open market and burns it. Every payment and every burn is listed on <a href="/proof" style="text-decoration:underline">/proof</a>.</p></div>
       <div><span class="label">Alerts</span><b>First look</b><p>Holders get the launch feed and new checks first, in Telegram and on the site.</p></div>
     </div>
+    <a class="btn btn-ghost" href="/token" style="margin:20px 0 4px">How $TELL works: every flow, from launch to burn <span class="arr">→</span></a>
     <div class="official" id="official">
       <div class="off-l">
         <span class="label">Official contract</span>
@@ -741,7 +744,7 @@ function countUp(el, to, ms) {
   const start = performance.now();
   const step = now => {
     const p = Math.min((now - start) / ms, 1);
-    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US');
     if (p < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -781,11 +784,16 @@ const io = new IntersectionObserver(entries => {
 }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
-// Hero stats count up once
-document.querySelectorAll('[data-count]').forEach(el => {
-  const to = +el.dataset.count;
-  if (to > 0 && !calm) setTimeout(() => countUp(el, to, 900), 1200);
-});
+// Hero stats: live numbers, counted up once
+fetch('/api/v1/stats').then(r => r.json()).then(s => {
+  const vals = { checked24h: s.checked24h, medianCheckSeconds: s.medianCheckSeconds, verdictsOnRecord: s.verdictsOnRecord, lift: s.accuracy?.lift };
+  document.querySelectorAll('[data-live]').forEach(el => {
+    const v = vals[el.dataset.live];
+    if (v == null) { if (el.dataset.live === 'lift') el.closest('.stat').hidden = true; return; }
+    if (!Number.isInteger(v) || calm) { el.textContent = v.toLocaleString('en-US'); return; }
+    setTimeout(() => countUp(el, v, 900), 1200);
+  });
+}).catch(() => {});
 
 // Official $TELL: shows the real contract once TELL_TOKEN is set, a warning about fakes until then
 document.addEventListener('tell:me', e => {

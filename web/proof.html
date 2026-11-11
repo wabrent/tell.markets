@@ -43,7 +43,7 @@ nav .wrap { display: flex; align-items: center; justify-content: space-between; 
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 32px; }
 @media (min-width: 768px) { .stats { grid-template-columns: repeat(4, max-content); gap: 48px; } }
 .stats b { display: block; font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: 1; color: #fff; }
-main { padding-top: 48px; padding-bottom: 96px; }
+main.wrap { padding-top: 48px; padding-bottom: 96px; }
 h2 { font-family: var(--serif); font-weight: 400; font-size: 38px; margin: 48px 0 14px; }
 h2:first-child { margin-top: 0; }
 h2 em { font-style: italic; }
@@ -78,7 +78,7 @@ footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13p
   <nav>
     <div class="wrap">
       <a class="brand" href="/"><img class="logo" src="/assets/logo.webp" alt="" width="34" height="34">TELL</a>
-      <div class="links"><a href="/">Check</a><a href="/launches">Launches</a><a href="/compare">Compare</a><a href="/app">Token map</a><a href="/docs">API</a><a href="/proof" class="on">Proof</a></div>
+      <div class="links"><a href="/">Check</a><a href="/launches">Launches</a><a href="/compare">Compare</a><a href="/app">Token map</a><a href="/accuracy">Accuracy</a><a href="/docs">API</a><a href="/proof" class="on">Proof</a><a href="/token">$TELL</a></div>
       <div data-wallet></div>
     </div>
   </nav>
