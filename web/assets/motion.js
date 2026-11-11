@@ -98,15 +98,21 @@
     // numbers in the header count up when their value arrives (most come from a fetch)
     document.querySelectorAll('.band .stats b, .band .counters b').forEach(watchCount);
 
-    // tables and lists filled in later by the page still ease in
+    // Tables and charts filled in later by the page ease in, once. A container that refills itself
+    // (the launch feed re-renders every 20s and animates its own new rows) is left alone after
+    // its first fill, so nothing flickers on refresh.
+    const filled = new WeakSet();
     const mo = new MutationObserver(list => {
-      for (const m of list) for (const n of m.addedNodes) {
-        // feeds re-render fast: a row may already be gone by the time we see it
-        if (n.nodeType !== 1 || !n.parentNode || !n.isConnected || n.closest('[data-reveal]')?.style.opacity === '0') continue;
-        if (n.matches('tr, .row, .item, .bar-row, .cp, li')) gsap.from(n, { opacity: 0, y: 10, duration: 0.6, ease: 'power2.out', delay: Math.min(0.4, [...n.parentNode.children].indexOf(n) * 0.03) });
+      for (const m of list) {
+        const box = m.target;
+        if (filled.has(box) || box.closest('#list, .feed, #feed')) continue;
+        const rows = [...m.addedNodes].filter(n => n.nodeType === 1 && n.isConnected && n.matches('tr, .bar-row, .cp'));
+        if (!rows.length) continue;
+        filled.add(box);
+        gsap.from(rows, { opacity: 0, y: 10, duration: 0.6, ease: 'power2.out', stagger: 0.03, clearProps: 'opacity,transform' });
       }
     });
-    document.querySelectorAll('main, .feed, #feed, #list, tbody').forEach(el => mo.observe(el, { childList: true, subtree: true }));
+    document.querySelectorAll('main').forEach(el => mo.observe(el, { childList: true, subtree: true }));
 
     // buttons lean toward the pointer a little
     document.querySelectorAll('.btn, .sq, .lookup button, .ca button, .ca a').forEach(b => {

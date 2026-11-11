@@ -8,6 +8,14 @@
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <script src="/assets/tell.js"></script>
+<script>
+// Hide what is about to animate before the first paint, so headings don't show, vanish and
+// rise again. The motion script lifts this; if it never loads, the page shows anyway.
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  document.documentElement.classList.add('js-motion-pre');
+  setTimeout(() => document.documentElement.classList.remove('js-motion-pre'), 4000);
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -35,7 +43,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { background: var(--ink); scroll-behavior: smooth; }
+html { background: var(--ink); }
 body {
   background: var(--ink); color: var(--text); font-family: var(--sans);
   font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden;
@@ -421,6 +429,7 @@ details { padding: 28px 0; }
 /* motion: headings rise word by word, blocks ease in (set up by the script at the bottom) */
 .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .08em .14em 0; margin: 0 -.08em -.14em 0; }
 .w > span { display: inline-block; will-change: transform; }
+.js-motion-pre .mega, .js-motion-pre :is(.mega-sub, section .label, .nums .num, .giant-row > div, .price-grid > div, .agent-code, .sq-row, .share, .official, details, .frame) { opacity: 0; }
 .js-motion .mega .w > span { transform: translateY(110%); }
 .js-motion [data-reveal] { opacity: 0; transform: translateY(28px); }
 .sc-art .art, .token-art, .statue { will-change: transform; }
@@ -723,7 +732,10 @@ async function run(q) {
   progress.classList.add('on');
   body.classList.add('loading');
   status.classList.add('busy');
-  document.getElementById('report').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // through the smooth-scroll engine when it runs; a native smooth scroll would fight it
+  const reportEl = document.getElementById('report');
+  if (window.TellLenis) window.TellLenis.scrollTo(reportEl, { offset: -10 });
+  else reportEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   let i = 0;
   status.textContent = steps[0];
   const ticker = setInterval(() => { status.textContent = steps[Math.min(++i, steps.length - 1)]; }, 1800);
@@ -849,32 +861,14 @@ const TICKS = ['Pons V2', 'Ostra', 'Conductor', 'Uniswap v4', 'Contract permissi
   'Holder clusters', 'Deployer history', 'AI website review', 'One-line verdict', 'Not financial advice'];
 document.getElementById('ticker').innerHTML = [...TICKS, ...TICKS].map(t => `<span><i>●</i><b>${t}</b></span>`).join('');
 
-// Statue follows the cursor a little and drifts slower than the page on scroll
+// Statue leans toward the cursor a little. Scroll drift and block reveals live in the motion
+// script at the bottom (one owner per effect, so nothing fights over the same transform).
 const statue = document.getElementById('statue');
-let mx = 0, my = 0;
 if (!calm) {
   addEventListener('mousemove', e => {
-    mx = (e.clientX / innerWidth - 0.5) * -18;
-    my = (e.clientY / innerHeight - 0.5) * -12;
-    moveStatue();
+    statue.style.transform = `translate3d(${(e.clientX / innerWidth - 0.5) * -18}px, ${(e.clientY / innerHeight - 0.5) * -12}px, 0)`;
   }, { passive: true });
-  addEventListener('scroll', moveStatue, { passive: true });
 }
-function moveStatue() {
-  statue.style.transform = `translate3d(${mx}px, ${my + scrollY * 0.18}px, 0)`;
-}
-
-// Reveal blocks as they scroll in
-const revealSel = ['.sec-head', '.frame', '.item', '.pad', '.table-wrap', '.token-card > div', 'details', '.final h2', '.final .btn'];
-document.querySelectorAll(revealSel.join(',')).forEach(el => {
-  el.classList.add('reveal');
-  const sibs = [...el.parentElement.children].filter(c => c.matches(revealSel.join(',')));
-  el.style.setProperty('--d', Math.min(sibs.indexOf(el), 6) * 0.08 + 's');
-});
-const io = new IntersectionObserver(entries => {
-  for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
 // Hero stats: live numbers, counted up once
 fetch('/api/v1/stats').then(r => r.json()).then(s => {
@@ -912,13 +906,17 @@ if (fromPath) { input.value = fromPath; run(fromPath); }
 // Motion layer: smooth scroll, word-by-word headings, parallax art, count-ups.
 // Everything here is decoration; the page works and reads the same without it.
 (function () {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !window.gsap || !window.ScrollTrigger) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !window.gsap || !window.ScrollTrigger) {
+    document.documentElement.classList.remove('js-motion-pre'); // no motion: show everything now
+    return;
+  }
   gsap.registerPlugin(ScrollTrigger);
   document.documentElement.classList.add('js-motion');
 
   // smooth scroll, driven by GSAP's ticker so ScrollTrigger stays in sync
   if (window.Lenis) {
     const lenis = new Lenis({ duration: 1.15, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true });
+    window.TellLenis = lenis;
     lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add(t => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
@@ -957,6 +955,8 @@ if (fromPath) { input.value = fromPath; run(fromPath); }
   // copy, labels, cards and buttons ease in as their section arrives
   const ins = '.mega-sub, section .label, .nums .num, .giant-row > div, .price-grid > div, .agent-code, .sq-row, .share, .official, details, .frame';
   document.querySelectorAll(ins).forEach(el => el.setAttribute('data-reveal', ''));
+  // words are split and blocks are marked: they now hide themselves, so the pre-paint cover can go
+  document.documentElement.classList.remove('js-motion-pre');
   ScrollTrigger.batch('[data-reveal]', {
     start: 'top 88%',
     onEnter: els => gsap.to(els, { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: 0.08, overwrite: true }),
