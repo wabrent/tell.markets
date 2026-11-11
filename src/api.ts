@@ -155,7 +155,8 @@ function stats() {
     checked24h: feed.filter(l => l.score).length,
     medianCheckSeconds: ms.length ? Math.round(ms[Math.floor(ms.length / 2)] / 1000) : null,
     verdictsOnRecord: proofSummary().verdicts,
-    accuracy: { tokens: acc.tokens, lift: acc.lift },
+    // only brag about the lift when the score actually separates outcomes
+    accuracy: { tokens: acc.tokens, lift: acc.lift && acc.lift > 1 ? acc.lift : null },
   };
 }
 
