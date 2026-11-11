@@ -109,7 +109,17 @@
   // broken image simply reveals it.
   const HUES = [356, 8, 22, 36, 48, 150, 172, 196, 212, 228, 258, 285];
   const escA = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  // Token images from other hosts go through tell.markets/img: plain-http and no-embed hosts
+  // would otherwise be blocked on this https page.
+  Tell.img = function (src) {
+    if (!src) return src;
+    const s = String(src).replace(/^ipfs:\/\//, 'https://ipfs.io/ipfs/');
+    if (!/^https?:\/\//i.test(s)) return s;
+    try { if (new URL(s).origin === location.origin) return s; } catch { return ''; }
+    return '/img?u=' + encodeURIComponent(s);
+  };
   Tell.avatar = function (address, symbol, image) {
+    image = Tell.img(image);
     const a = String(address || '0x0').toLowerCase();
     let h = 0;
     for (let i = 2; i < a.length; i++) h = (h * 31 + a.charCodeAt(i)) >>> 0;

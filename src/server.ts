@@ -12,6 +12,7 @@ import { handleApi } from './api.js';
 import { handleMcp } from './mcp.js';
 import { startProofLedger } from './proof.js';
 import { startAccuracy } from './accuracy.js';
+import { proxyImage } from './imageproxy.js';
 import { startTelegram } from './bots/telegram.js';
 import { startX } from './bots/x.js';
 import { paymentsEnabled } from './x402.js';
@@ -103,6 +104,7 @@ createServer(async (req, res) => {
     if (path === '/token') return page(req, res, 'token');
     // the redesign preview lived here; links shared during review land on the homepage
     if (path === '/new') { res.writeHead(301, { location: '/' }); return res.end(); }
+    if (path === '/img') return await proxyImage(url.searchParams.get('u') ?? '', res);
     if (path === '/robots.txt') { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('User-agent: *\nAllow: /\n'); }
     if (path === '/llms.txt') { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); return res.end(llmsTxt(config.publicUrl || 'https://tell.markets')); }
 
