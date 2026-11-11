@@ -597,16 +597,75 @@ function fit(animate) {
   const pad = 80;
   const k = Math.min(2.2, 0.92 * Math.min((W - pad * 2) / (x1 - x0 || 1), (H - 190) / (y1 - y0 || 1)));
   const t = d3.zoomIdentity.translate(W / 2 - k * (x0 + x1) / 2, (H - 70) / 2 - k * (y0 + y1) / 2).scale(k);
-  d3.select(canvas).transition().duration(animate && !calm ? 900 : 0).call(zoom.transform, t);
+  glide.vx = glide.vy = 0; zoomAnchor = null;
+  if (animate && !calm) { zoomTarget = t; return; }   // the camera eases there like any other zoom
+  zoomTarget = null;
+  d3.select(canvas).call(zoom.transform, t);
 }
 
 const visible = n => filters.others || n.kind !== 'others';
 
 /* ---- interaction ---- */
-const zoom = d3.zoom().scaleExtent([0.2, 6])
-  .filter(e => !(e.type === 'mousedown' && nodeAt(e.offsetX, e.offsetY)) && !e.button)
-  .on('zoom', e => { transform = e.transform; });
+// Smooth camera. d3.zoom still owns drag and pinch; the wheel and double-click set a target the
+// render loop eases toward, and a released drag keeps gliding and slows down on its own.
+let zoomTarget = null;            // where the camera is heading
+let zoomAnchor = null;            // { px, py, wx, wy }: the world point that stays under the cursor
+const glide = { vx: 0, vy: 0 };   // px per ms after a drag is let go
+const track = [];                 // recent drag positions, to measure the throw
+const K_MIN = 0.2, K_MAX = 6;
+const zoom = d3.zoom().scaleExtent([K_MIN, K_MAX])
+  .filter(e => e.type !== 'wheel' && e.type !== 'dblclick' && !(e.type === 'mousedown' && nodeAt(e.offsetX, e.offsetY)) && !e.button)
+  // any drag, pinch or scripted transition takes over from the eased camera
+  .on('start', e => { zoomTarget = null; zoomAnchor = null; if (e.sourceEvent) { glide.vx = glide.vy = 0; track.length = 0; } })
+  .on('zoom', e => {
+    transform = e.transform;
+    if (e.sourceEvent && e.sourceEvent.type !== 'wheel') { track.push({ t: performance.now(), x: transform.x, y: transform.y }); if (track.length > 6) track.shift(); }
+  })
+  .on('end', e => {
+    if (!e.sourceEvent || calm || track.length < 2) return;
+    const a = track[0], b = track[track.length - 1], dt = b.t - a.t;
+    if (dt > 0 && performance.now() - b.t < 80) { glide.vx = (b.x - a.x) / dt; glide.vy = (b.y - a.y) / dt; }
+    track.length = 0;
+  });
 d3.select(canvas).call(zoom).on('dblclick.zoom', null);
+
+const clampK = k => Math.max(K_MIN, Math.min(K_MAX, k));
+function zoomAt(px, py, factor) {
+  const base = zoomTarget || transform;
+  const k = clampK(base.k * factor);
+  // the point under the cursor right now, so a burst of wheel ticks never makes the view jump
+  const [wx, wy] = transform.invert([px, py]);
+  zoomTarget = d3.zoomIdentity.translate(px - wx * k, py - wy * k).scale(k);
+  zoomAnchor = { px, py, wx, wy };
+  glide.vx = glide.vy = 0;
+  if (calm) { transform = zoomTarget; zoomTarget = null; d3.select(canvas).property('__zoom', transform); }
+}
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  // trackpads send many small deltas, mouse wheels a few big ones; both land on the same curve
+  const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+  zoomAt(e.offsetX, e.offsetY, Math.pow(2, -dy * (e.ctrlKey ? 0.01 : 0.0024)));
+}, { passive: false });
+canvas.addEventListener('dblclick', e => { if (!nodeAt(e.offsetX, e.offsetY)) zoomAt(e.offsetX, e.offsetY, e.shiftKey ? 0.5 : 2); });
+
+/** One step of the camera: ease toward the zoom target, or coast after a throw. */
+function camera(dt) {
+  if (zoomTarget) {
+    const f = 1 - Math.exp(-dt / 85);
+    const k = Math.exp(Math.log(transform.k) + (Math.log(zoomTarget.k) - Math.log(transform.k)) * f);
+    // a wheel zoom keeps its world point pinned under the cursor; a fit just glides across
+    const x = zoomAnchor ? zoomAnchor.px - zoomAnchor.wx * k : transform.x + (zoomTarget.x - transform.x) * f;
+    const y = zoomAnchor ? zoomAnchor.py - zoomAnchor.wy * k : transform.y + (zoomTarget.y - transform.y) * f;
+    transform = d3.zoomIdentity.translate(x, y).scale(k);
+    if (Math.abs(k - zoomTarget.k) < 0.0005 * k && Math.abs(x - zoomTarget.x) < 0.3 && Math.abs(y - zoomTarget.y) < 0.3) { transform = zoomTarget; zoomTarget = null; zoomAnchor = null; }
+    d3.select(canvas).property('__zoom', transform);
+  } else if (Math.abs(glide.vx) + Math.abs(glide.vy) > 0.002) {
+    transform = d3.zoomIdentity.translate(transform.x + glide.vx * dt, transform.y + glide.vy * dt).scale(transform.k);
+    const decay = Math.exp(-dt / 260);
+    glide.vx *= decay; glide.vy *= decay;
+    d3.select(canvas).property('__zoom', transform);
+  }
+}
 
 function nodeAt(px, py) {
   if (!G) return null;
@@ -833,6 +892,7 @@ function frame(now) {
     syncTimeline();
   }
   ambient();
+  camera(dt);
   draw(now, dt);
   requestAnimationFrame(frame);
 }
