@@ -1,6 +1,10 @@
+import { zeroAddress, type Hex } from 'viem';
 import { knownAsset } from './known.js';
+import { BLOCKS_PER_SEC, LAUNCH_TOPIC, PONS_FACTORY } from './launches.js';
 import { firstScores } from './reports.js';
 import { getTokensPairs } from './sources/dexscreener.js';
+import { fetchTransfers } from './sources/logs.js';
+import { background, client, withBackoff } from './sources/rpc.js';
 import { JsonStore } from './store.js';
 
 /*
@@ -31,10 +35,10 @@ let lastRun = 0;
 let running = false;
 
 const LEVELS = [
-  { level: 'low', range: '0–29', lo: 0, hi: 29 },
-  { level: 'medium', range: '30–59', lo: 30, hi: 59 },
-  { level: 'caution', range: '60–79', lo: 60, hi: 79 },
-  { level: 'high', range: '80–100', lo: 80, hi: 100 },
+  { level: 'low', range: '0вЂ“29', lo: 0, hi: 29 },
+  { level: 'medium', range: '30вЂ“59', lo: 30, hi: 59 },
+  { level: 'caution', range: '60вЂ“79', lo: 60, hi: 79 },
+  { level: 'high', range: '80вЂ“100', lo: 80, hi: 100 },
 ] as const;
 
 async function evaluate() {
@@ -60,11 +64,151 @@ async function evaluate() {
   } finally { running = false; }
 }
 
+/*
+ * Rug check. Survival can't tell a scam from a launch nobody wanted, so the main measure asks what
+ * Tell is actually for: after Tell scored the token, did the people with the knife use it?
+ *   deployer dump: the deployer held >= 0.5% of supply at the first check and sold >= 90% of it since
+ *   holder exodus: at least 20 holders at the first check, and half of them gone since
+ * Anything that happened before the first check doesn't count: Tell saw that and scored it.
+ * Looked at once per token, 24h to 7 days after the first check, rebuilt from the transfer log.
+ */
+const RUG_MIN_AGE = 24 * 3600_000;
+const DEAD = '0x000000000000000000000000000000000000dead';
+
+export interface RugOutcome {
+  token: string;
+  firstScore: number;
+  firstAt: number;
+  evaluatedAt: number;
+  deployerHeldPct: number;
+  deployerSoldPct: number;
+  holdersAt: number;
+  holdersNow: number;
+  dumped: boolean;
+  exodus: boolean;
+  rug: boolean;
+}
+
+const rugs = new JsonStore<RugOutcome>('accuracy-rugs.json', 200_000);
+/** Tokens we tried and could not judge (not a Pons launch, history too busy): don't retry forever. */
+const rugSkip = new JsonStore<number>('accuracy-rugs-skip.json', 200_000);
+let rugRunning = false;
+let rugLastRun = 0;
+// ~3 RPC calls a token, all in the background queue behind people's checks;
+// 400 every 15 minutes clears a backlog in hours and easily keeps up with ~1,600 launches a day
+const RUG_BATCH = 400;
+
+async function evaluateRugs() {
+  if (rugRunning) return;
+  rugRunning = true;
+  try {
+    await background.run(true, async () => {
+      const now = Date.now();
+      const latest = await withBackoff(() => client.getBlock());
+      const blockAt = (t: number) => latest.number - BigInt(Math.max(0, Math.round((Number(latest.timestamp) * 1000 - t) / 1000 * BLOCKS_PER_SEC)));
+      // oldest first: those are closest to leaving the 7-day window
+      const due = firstScores()
+        .filter(f => !rugs.get(f.token) && !rugSkip.get(f.token) && now - f.t >= RUG_MIN_AGE && now - f.t <= MAX_AGE && !knownAsset(f.token))
+        .sort((a, b) => a.t - b.t)
+        .slice(0, RUG_BATCH);
+      for (const f of due) {
+        try {
+          const o = await rugOutcome(f.token as Hex, f.s, f.t, blockAt);
+          if (o) rugs.set(f.token, o); else rugSkip.set(f.token, now);
+        } catch (err) {
+          console.error('rug check failed', f.token, (err as Error).message?.split('\n')[0]);
+        }
+      }
+    });
+    rugLastRun = Date.now();
+  } finally { rugRunning = false; }
+}
+
+export async function rugOutcome(token: Hex, firstScore: number, firstAt: number, blockAt: (t: number) => bigint): Promise<RugOutcome | undefined> {
+  // the launch happened before the first check; three days back covers Tell's own launch feed
+  const { transfers, complete } = await fetchTransfers(token, 40_000, blockAt(firstAt - 3 * 24 * 3600_000));
+  if (!complete) return undefined;
+  const mint = transfers.find(t => t.from === zeroAddress);
+  if (!mint) return undefined;
+
+  // the deployer comes from the Pons launch event in the mint's block
+  const logs = await withBackoff(() => client.request({
+    method: 'eth_getLogs',
+    params: [{ address: PONS_FACTORY, topics: [LAUNCH_TOPIC, ('0x' + token.slice(2).toLowerCase().padStart(64, '0')) as Hex], fromBlock: `0x${(mint.block - 1n).toString(16)}`, toBlock: `0x${(mint.block + 1n).toString(16)}` }],
+  })) as { topics: Hex[] }[];
+  if (!logs.length) return undefined; // not a Pons launch: no deployer to follow
+  const deployer = ('0x' + logs[0].topics[3].slice(-40)).toLowerCase();
+
+  const checkBlock = blockAt(firstAt);
+  const supply = transfers.filter(t => t.from === zeroAddress).reduce((s, t) => s + t.value, 0n);
+  if (supply === 0n) return undefined;
+  const snapshot = (upTo: bigint | undefined) => {
+    const bal = new Map<string, bigint>();
+    for (const t of transfers) {
+      if (upTo !== undefined && t.block > upTo) break;
+      const from = t.from.toLowerCase(), to = t.to.toLowerCase();
+      if (from !== zeroAddress) bal.set(from, (bal.get(from) ?? 0n) - t.value);
+      bal.set(to, (bal.get(to) ?? 0n) + t.value);
+    }
+    let holders = 0;
+    for (const [a, b] of bal) if (b > 0n && a !== zeroAddress && a !== DEAD) holders++;
+    return { holders, deployer: bal.get(deployer) ?? 0n };
+  };
+  const at = snapshot(checkBlock), now = snapshot(undefined);
+  const heldPct = Number((at.deployer * 1_000_000n) / supply) / 10_000;
+  const soldPct = at.deployer > 0n ? Math.max(0, Number(((at.deployer - now.deployer) * 10_000n) / at.deployer) / 100) : 0;
+  const dumped = heldPct >= 0.5 && soldPct >= 90;
+  const exodus = at.holders >= 20 && now.holders <= at.holders / 2;
+  return {
+    token, firstScore, firstAt, evaluatedAt: Date.now(),
+    deployerHeldPct: heldPct, deployerSoldPct: soldPct, holdersAt: at.holders, holdersNow: now.holders,
+    dumped, exodus, rug: dumped || exodus,
+  };
+}
+
 export function startAccuracy() {
   const tick = () => evaluate().catch(err => console.error('accuracy run failed', (err as Error).message));
   setTimeout(tick, 2 * 60_000);
   setInterval(tick, 2 * 3600_000);
+  const rugTick = () => evaluateRugs().catch(err => console.error('rug run failed', (err as Error).message));
+  setTimeout(rugTick, 3 * 60_000);
+  setInterval(rugTick, 15 * 60_000);
 }
+
+/** Holders at the first check that make a token "bought": most launches never get a second buyer. */
+const TRACTION = 10;
+
+export function rugSummary() {
+  // most launches have nobody in them to rug, so the headline counts tokens people actually bought
+  const all = rugs.values().filter(o => o.holdersAt >= TRACTION);
+  const allTokens = rugs.values().length;
+  const buckets = LEVELS.map(L => {
+    const rows = all.filter(o => o.firstScore >= L.lo && o.firstScore <= L.hi);
+    return {
+      level: L.level, range: L.range, tokens: rows.length,
+      rugPct: pct(rows.filter(o => o.rug).length, rows.length),
+      deployerDumpPct: pct(rows.filter(o => o.dumped).length, rows.length),
+      holderExodusPct: pct(rows.filter(o => o.exodus).length, rows.length),
+    };
+  });
+  const low = buckets[0], high = buckets[3];
+  return {
+    updatedAt: rugLastRun || null,
+    tokens: all.length,
+    evaluated: allTokens,
+    minHolders: TRACTION,
+    buckets,
+    // how many times more often high-risk tokens were rugged than low-risk ones
+    lift: low.rugPct && high.rugPct !== null ? Math.round((high.rugPct / low.rugPct) * 10) / 10 : null,
+    method: {
+      rug: 'after Tell first scored the token, the deployer sold 90% or more of what they held (if they held at least 0.5% of supply), or the number of holders fell by half (from at least 20)',
+      window: 'each token is looked at once, 1 to 7 days after its first check, rebuilt from its on-chain transfer log',
+      sample: `tokens with at least ${TRACTION} holders at the first check; launches nobody bought have nothing to rug`,
+      excluded: 'anything that happened before the first check (Tell had already seen it), tokens not launched on Pons, tokens with more than 40,000 transfers',
+    },
+  };
+}
+export const rugRows = () => rugs.values();
 
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 1000) / 10 : null);
 const median = (xs: number[]) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };

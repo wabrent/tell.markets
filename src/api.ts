@@ -7,7 +7,7 @@ import { createKey, keyFrom, keyIsHolder, keysOf } from './keys.js';
 import { launchFeed } from './launches.js';
 import { proofFor, proofSummary, tellBurned } from './proof.js';
 import { fullCheck, quickCheck, type Answer } from './quick.js';
-import { accuracyRows, accuracySummary } from './accuracy.js';
+import { accuracyRows, accuracySummary, rugRows, rugSummary } from './accuracy.js';
 import { recentCheckMs } from './reports.js';
 import { paymentResponseHeader, paymentsEnabled, readPayment, requirements, revenue, sendPaymentRequired, settlePayment, USDG, verifyPayment } from './x402.js';
 
@@ -90,10 +90,10 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, url: 
   }
 
   if (path === '/api/v1/pricing') { json(res, 200, pricing()); return true; }
-  if (path === '/api/v1/accuracy') { json(res, 200, accuracySummary()); return true; }
+  if (path === '/api/v1/accuracy') { json(res, 200, { ...accuracySummary(), rugs: rugSummary() }); return true; }
   if (path === '/api/v1/accuracy/raw') {
     res.setHeader('content-disposition', 'attachment; filename="tell-accuracy.json"');
-    json(res, 200, { ...accuracySummary(), rows: accuracyRows() });
+    json(res, 200, { survival: { ...accuracySummary(), rows: accuracyRows() }, rugs: { ...rugSummary(), rows: rugRows() } });
     return true;
   }
   if (path === '/api/v1/stats') { json(res, 200, stats()); return true; }
@@ -149,14 +149,14 @@ async function paidFull(req: IncomingMessage, res: ServerResponse, address: `0x$
 function stats() {
   const feed = launchFeed();
   const ms = recentCheckMs().sort((a, b) => a - b);
-  const acc = accuracySummary();
+  const rug = rugSummary();
   return {
     launches24h: feed.length,
     checked24h: feed.filter(l => l.score).length,
     medianCheckSeconds: ms.length ? Math.round(ms[Math.floor(ms.length / 2)] / 1000) : null,
     verdictsOnRecord: proofSummary().verdicts,
-    // only brag about the lift when the score actually separates outcomes
-    accuracy: { tokens: acc.tokens, lift: acc.lift && acc.lift > 1 ? acc.lift : null },
+    // only brag about the lift when the score actually separates outcomes, on a real sample
+    accuracy: { tokens: rug.tokens, lift: rug.lift && rug.lift > 1 && rug.tokens >= 200 ? rug.lift : null },
   };
 }
 

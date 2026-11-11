@@ -47,7 +47,7 @@ async function pool<T>(tasks: (() => Promise<T>)[], n = CONCURRENCY): Promise<T[
  * stops reaching further back and returns the most recent `maxLogs` with complete: false, which is
  * still enough to draw a map of recent activity.
  */
-export async function fetchTransfers(token: Hex, maxLogs = 40_000): Promise<{ transfers: Transfer[]; complete: boolean }> {
+export async function fetchTransfers(token: Hex, maxLogs = 40_000, fromBlock = 0n): Promise<{ transfers: Transfer[]; complete: boolean }> {
   const latest = await withBackoff(() => client.getBlockNumber());
   let total = 0;
 
@@ -75,7 +75,7 @@ export async function fetchTransfers(token: Hex, maxLogs = 40_000): Promise<{ tr
   };
 
   // ranges run newest first; once the cap is hit, older ranges come back empty instead of failing
-  const parts = await pool(ranges(0n, latest).map(([lo, hi]) => () =>
+  const parts = await pool(ranges(fromBlock < latest ? fromBlock : 0n, latest).map(([lo, hi]) => () =>
     getRange(lo, hi).catch(err => { if (err instanceof TooMany) return [] as Transfer[]; throw err; })));
   const sorted = parts.flat().sort((a, b) => (a.block === b.block ? a.logIndex - b.logIndex : a.block < b.block ? -1 : 1));
   const complete = total <= maxLogs;

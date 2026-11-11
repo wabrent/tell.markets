@@ -91,7 +91,7 @@ footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13p
   <div class="wrap">
     <span class="label">Accuracy · <span id="h-sample">measuring</span></span>
     <h1>Does the score <em>mean anything?</em></h1>
-    <p>Every token Tell scores is looked at again 2 to 7 days later: is it still trading, with liquidity you could sell into? Here is what happened, by the risk level Tell gave it on day one.</p>
+    <p>Tell can't say which token will go up. It looks for the people holding a knife. So the real test is: after Tell scored a token, did the deployer dump or the holders run? Here is what happened, by the risk level Tell gave it on day one.</p>
     <div class="headline" id="headline"></div>
   </div>
 </header>
@@ -100,23 +100,25 @@ footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13p
   <div id="body">
     <div class="collecting">Loading the numbers…</div>
   </div>
+  <div id="survival"></div>
 
   <h2>How it is <em>measured.</em></h2>
   <div class="cols">
     <div class="box">
       <dl id="method">
         <dt>Score</dt><dd>The first score Tell gave the token, before anyone knew how it would end.</dd>
-        <dt>Outcome</dt><dd>Each token is looked at once, 2 to 7 days after its first check, and the result is frozen.</dd>
-        <dt>Still trading</dt><dd>Has a DEX pool with at least $5,000 of liquidity at that moment.</dd>
-        <dt>Source</dt><dd>DexScreener for pools and liquidity; Tell's own score history for scores.</dd>
-        <dt>Excluded</dt><dd>Stablecoins, WETH and tokenized stocks Tell recognizes.</dd>
+        <dt>Rugged</dt><dd>After that first check, the deployer sold 90% or more of what they held (if they held at least 0.5% of supply), or half of the holders left (from at least 20).</dd>
+        <dt>Sample</dt><dd>Tokens with at least 10 holders at the first check. Most launches never get a second buyer, so there is nobody in them to rug.</dd>
+        <dt>Window</dt><dd>Each token is looked at once, 1 to 7 days after its first check, rebuilt from its on-chain transfer log. The result is frozen.</dd>
+        <dt>Not counted</dt><dd>Anything that happened before the first check (Tell had already seen it and scored it), tokens not launched on Pons, tokens with more than 40,000 transfers, stablecoins and tokenized stocks.</dd>
       </dl>
     </div>
     <div class="box good">
       <span class="label" style="color:var(--amber)">Good to know</span>
-      <ul id="caveats" style="margin-top:14px">
-        <li>Survival is not safety: a token can be alive and still be a bad buy, or die without any wrongdoing.</li>
-        <li>Most launches never reach a pool, so even low-risk tokens die often. Compare the levels with each other, not with zero.</li>
+      <ul style="margin-top:14px">
+        <li>A low score means Tell found no tell, not that the token will go up. Most launches die without anyone cheating.</li>
+        <li>A rug can also come from a wallet Tell didn't flag. That still counts against the score here.</li>
+        <li>Levels with few tokens move a lot week to week. The sample grows by hundreds of tokens a day.</li>
         <li>Older scores were made by older versions of Tell; the checks keep improving.</li>
       </ul>
     </div>
@@ -130,42 +132,59 @@ footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13p
 const fmt = n => n.toLocaleString('en-US');
 const day = t => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 const usd = n => n == null ? '—' : n >= 1000 ? '$' + (n / 1000).toFixed(n >= 1e4 ? 0 : 1) + 'k' : '$' + n;
-const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const pc = v => v == null ? '—' : v + '%';
+const MIN_RUG_SAMPLE = 50;
+
+const bars = (buckets, key, scale) => `<div class="chart">
+  ${buckets.map(b => `<div class="bar-row t-${b.level}">
+    <div class="who"><b>${b.level}</b><span>${b.range} · ${fmt(b.tokens)}</span></div>
+    <div class="track"><div class="fill" data-w="${b.tokens ? ((b[key] ?? 0) / scale) * 100 : 0}"></div></div>
+    <div class="val">${b.tokens ? pc(b[key]) : '—'}</div></div>`).join('')}
+  <div class="chart-note">Bars are scaled to the highest level.</div>
+</div>`;
 
 fetch('/api/v1/accuracy').then(r => r.json()).then(a => {
-  const body = document.getElementById('body');
-  document.getElementById('caveats').innerHTML = a.caveats.map(c => `<li>${esc(c)}</li>`).join('');
-  if (a.tokens < 100) {
+  const r = a.rugs, body = document.getElementById('body'), head = document.getElementById('headline');
+  const [low, , , high] = r.buckets;
+
+  if (r.tokens < MIN_RUG_SAMPLE) {
     document.getElementById('h-sample').textContent = 'collecting data';
-    body.innerHTML = `<div class="collecting">Tell has evaluated ${fmt(a.tokens)} tokens so far. The comparison appears once at least 100 tokens are 2 days past their first check.</div>`;
-    return;
+    body.innerHTML = `<div class="collecting">Tell has rug-checked ${fmt(r.evaluated)} tokens so far, ${fmt(r.tokens)} of them with real buyers. The comparison appears once ${MIN_RUG_SAMPLE} tokens with buyers are a day past their first check. New ones are added every 30 minutes.</div>`;
+  } else {
+    document.getElementById('h-sample').textContent = `${fmt(r.tokens)} tokens with buyers · ${fmt(r.evaluated)} checked`;
+    // said plainly either way: if the score stops separating outcomes, this page shows it
+    if (high.tokens && low.tokens) {
+      head.innerHTML = r.lift && r.lift > 1
+        ? `Tokens Tell called <b>high risk</b> were rugged <b>${r.lift}×</b> as often as the ones it called <b>low risk</b>: ${high.rugPct}% against ${low.rugPct}%.`
+        : high.rugPct > 0 && !low.rugPct
+          ? `<b>${high.rugPct}%</b> of the tokens Tell called <b>high risk</b> were rugged after the check. <b>None</b> of the low-risk ones were.`
+          : `Right now high-risk and low-risk tokens get rugged at similar rates (${pc(high.rugPct)} against ${pc(low.rugPct)}). The score is not separating them yet.`;
+    }
+    const max = Math.max(...r.buckets.map(b => b.rugPct ?? 0), 1);
+    body.innerHTML = `
+      <h2>Rugged <em>after the check.</em></h2>
+      <p class="sub">Share of tokens where the deployer dumped or the holders ran after Tell first scored them, by that first score.</p>
+      ${bars(r.buckets, 'rugPct', max)}
+      <h2>The <em>numbers.</em></h2>
+      <div class="tbl"><table>
+        <tr><th>Risk level</th><th class="num">Tokens</th><th class="num">Rugged</th><th class="num">Deployer dumped</th><th class="num">Holders ran</th></tr>
+        ${r.buckets.map(b => `<tr class="t-${b.level}"><td><span class="dot"></span>${b.level} <span style="color:var(--dim);font-size:12px">${b.range}</span></td>
+          <td class="num">${fmt(b.tokens)}</td><td class="num">${pc(b.rugPct)}</td><td class="num">${pc(b.deployerDumpPct)}</td><td class="num">${pc(b.holderExodusPct)}</td></tr>`).join('')}
+      </table></div>`;
   }
-  document.getElementById('h-sample').textContent = `${fmt(a.tokens)} tokens · scored ${day(a.from)} – ${day(a.to)}`;
-  const [low, , , high] = a.buckets;
-  if (a.lift && low.tokens && high.tokens) {
-    // said plainly either way: if the score stops separating outcomes, this page should show it
-    document.getElementById('headline').innerHTML = a.lift > 1
-      ? `Tokens Tell called <b>low risk</b> were still trading <b>${a.lift}×</b> as often as the ones it called <b>high risk</b>: ${low.alivePct}% against ${high.alivePct}%.`
-      : `Right now low-risk and high-risk tokens survive at similar rates (${low.alivePct}% against ${high.alivePct}%). The score is not separating them yet.`;
+
+  // second view: survival, which mostly shows how few launches make it at all
+  if (a.tokens >= 100) {
+    const max = Math.max(...a.buckets.map(b => b.alivePct ?? 0), 1);
+    document.getElementById('survival').innerHTML = `
+      <h2>Still trading <em>2–7 days later.</em></h2>
+      <p class="sub">All ${fmt(a.tokens)} scored launches: share with a DEX pool and at least $5k of liquidity. Fewer than 1% make it at any risk level, which is why survival alone can't grade a risk score.</p>
+      ${bars(a.buckets, 'alivePct', max)}
+      <div class="tbl" style="margin-top:16px"><table>
+        <tr><th>Risk level</th><th class="num">Tokens</th><th class="num">Reached a pool</th><th class="num">Still trading</th><th class="num">Median liquidity (alive)</th></tr>
+        ${a.buckets.map(b => `<tr class="t-${b.level}"><td><span class="dot"></span>${b.level}</td><td class="num">${fmt(b.tokens)}</td><td class="num">${pc(b.reachedPoolPct)}</td><td class="num">${pc(b.alivePct)}</td><td class="num">${usd(b.medianLiquidityOfAliveUsd)}</td></tr>`).join('')}
+      </table></div>`;
   }
-  const max = Math.max(...a.buckets.map(b => b.alivePct ?? 0), 1);
-  body.innerHTML = `
-    <h2>Still trading <em>after 2–7 days.</em></h2>
-    <p class="sub">Share of tokens with a pool and at least $5k of liquidity, grouped by the first score Tell gave them.</p>
-    <div class="chart">
-      ${a.buckets.map(b => `<div class="bar-row t-${b.level}">
-        <div class="who"><b>${b.level}</b><span>${b.range} · ${fmt(b.tokens)}</span></div>
-        <div class="track"><div class="fill" data-w="${b.tokens ? (b.alivePct / max) * 100 : 0}"></div></div>
-        <div class="val">${b.tokens ? b.alivePct + '%' : '—'}</div></div>`).join('')}
-      <div class="chart-note">Bars are scaled to the highest level. Levels with few tokens move a lot from week to week.</div>
-    </div>
-    <h2>The <em>numbers.</em></h2>
-    <div class="tbl"><table>
-      <tr><th>Risk level</th><th class="num">Tokens</th><th class="num">Reached a pool</th><th class="num">Still trading</th><th class="num">Dead</th><th class="num">Median liquidity (alive)</th></tr>
-      ${a.buckets.map(b => `<tr class="t-${b.level}"><td><span class="dot"></span>${b.level} <span style="color:var(--dim);font-size:12px">${b.range}</span></td>
-        <td class="num">${fmt(b.tokens)}</td><td class="num">${b.reachedPoolPct ?? '—'}%</td><td class="num">${b.alivePct ?? '—'}%</td>
-        <td class="num">${b.deadPct ?? '—'}%</td><td class="num">${usd(b.medianLiquidityOfAliveUsd)}</td></tr>`).join('')}
-    </table></div>`;
   requestAnimationFrame(() => setTimeout(() => document.querySelectorAll('.fill').forEach(f => f.style.width = f.dataset.w + '%'), 60));
 }).catch(() => { document.getElementById('body').innerHTML = '<div class="collecting">Could not load the numbers right now.</div>'; });
 </script>

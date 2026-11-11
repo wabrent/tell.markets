@@ -7,9 +7,9 @@ import { JsonStore } from './store.js';
 import { tellIdentity } from './known.js';
 
 // Pons V2 factory and its Launch event: topics = [sig, token, curve, deployer]
-const PONS_FACTORY = '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
-const LAUNCH_TOPIC = '0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607';
-const BLOCKS_PER_SEC = 9.6; // measured on mainnet; only used to date launches without a block lookup
+export const PONS_FACTORY = '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
+export const LAUNCH_TOPIC = '0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607';
+export const BLOCKS_PER_SEC = 9.6; // measured on mainnet; only used to date launches without a block lookup
 const WINDOW_BLOCKS = BigInt(Math.round(24 * 3600 * BLOCKS_PER_SEC));
 const POLL_MS = 60_000;
 
