@@ -67,12 +67,20 @@ async function evaluate() {
 /*
  * Rug check. Survival can't tell a scam from a launch nobody wanted, so the main measure asks what
  * Tell is actually for: after Tell scored the token, did the people with the knife use it?
- *   deployer dump: the deployer held >= 0.5% of supply at the first check and sold >= 90% of it since
- *   holder exodus: at least 20 holders at the first check, and half of them gone since
+ *
+ * Every token is judged on the same clock: its state exactly RUG_HORIZON after the first check,
+ * rebuilt from the on-chain transfer log (so old tokens can be judged as fairly as new ones).
+ *   deployer dump: after the check the deployer held >= 0.5% of supply at some point, and by the
+ *                  horizon had sold >= 90% of that peak
+ *   holder exodus: after the check the token reached at least 20 holders, and by the horizon
+ *                  half of them were gone
+ *   sample:        tokens that reached at least 10 holders after the check. Tell checks launches in
+ *                  their first minutes, before most buyers arrive, so "holders at the check" is
+ *                  almost always 1 or 2; what matters is whether anyone came in afterwards.
  * Anything that happened before the first check doesn't count: Tell saw that and scored it.
- * Looked at once per token, 24h to 7 days after the first check, rebuilt from the transfer log.
  */
-const RUG_MIN_AGE = 24 * 3600_000;
+const RUG_HORIZON = 72 * 3600_000;
+const RUG_MAX_AGE = 30 * 24 * 3600_000;
 const DEAD = '0x000000000000000000000000000000000000dead';
 
 export interface RugOutcome {
@@ -80,23 +88,26 @@ export interface RugOutcome {
   firstScore: number;
   firstAt: number;
   evaluatedAt: number;
-  deployerHeldPct: number;
+  horizonHours: number;
+  holdersAtCheck: number;
+  peakHolders: number;
+  holdersAtHorizon: number;
+  deployerPeakPct: number;
   deployerSoldPct: number;
-  holdersAt: number;
-  holdersNow: number;
   dumped: boolean;
   exodus: boolean;
   rug: boolean;
 }
 
-const rugs = new JsonStore<RugOutcome>('accuracy-rugs.json', 200_000);
+// v2: fixed horizon and peak-based measures; v1 results (holders at the check) are not comparable
+const rugs = new JsonStore<RugOutcome>('accuracy-rugs-v2.json', 200_000);
 /** Tokens we tried and could not judge (not a Pons launch, history too busy): don't retry forever. */
 const rugSkip = new JsonStore<number>('accuracy-rugs-skip.json', 200_000);
 let rugRunning = false;
 let rugLastRun = 0;
 // ~3 RPC calls a token, all in the background queue behind people's checks;
-// 400 every 15 minutes clears a backlog in hours and easily keeps up with ~1,600 launches a day
-const RUG_BATCH = 400;
+// 500 every 15 minutes backfills a month of history in hours and keeps up with ~1,600 launches a day
+const RUG_BATCH = 500;
 
 async function evaluateRugs() {
   if (rugRunning) return;
@@ -106,10 +117,10 @@ async function evaluateRugs() {
       const now = Date.now();
       const latest = await withBackoff(() => client.getBlock());
       const blockAt = (t: number) => latest.number - BigInt(Math.max(0, Math.round((Number(latest.timestamp) * 1000 - t) / 1000 * BLOCKS_PER_SEC)));
-      // oldest first: those are closest to leaving the 7-day window
+      // newest eligible first, so the page reflects the current version of Tell soonest
       const due = firstScores()
-        .filter(f => !rugs.get(f.token) && !rugSkip.get(f.token) && now - f.t >= RUG_MIN_AGE && now - f.t <= MAX_AGE && !knownAsset(f.token))
-        .sort((a, b) => a.t - b.t)
+        .filter(f => !rugs.get(f.token) && !rugSkip.get(f.token) && now - f.t >= RUG_HORIZON && now - f.t <= RUG_MAX_AGE && !knownAsset(f.token))
+        .sort((a, b) => b.t - a.t)
         .slice(0, RUG_BATCH);
       for (const f of due) {
         try {
@@ -139,29 +150,43 @@ export async function rugOutcome(token: Hex, firstScore: number, firstAt: number
   if (!logs.length) return undefined; // not a Pons launch: no deployer to follow
   const deployer = ('0x' + logs[0].topics[3].slice(-40)).toLowerCase();
 
-  const checkBlock = blockAt(firstAt);
   const supply = transfers.filter(t => t.from === zeroAddress).reduce((s, t) => s + t.value, 0n);
   if (supply === 0n) return undefined;
-  const snapshot = (upTo: bigint | undefined) => {
-    const bal = new Map<string, bigint>();
-    for (const t of transfers) {
-      if (upTo !== undefined && t.block > upTo) break;
-      const from = t.from.toLowerCase(), to = t.to.toLowerCase();
-      if (from !== zeroAddress) bal.set(from, (bal.get(from) ?? 0n) - t.value);
-      bal.set(to, (bal.get(to) ?? 0n) + t.value);
-    }
-    let holders = 0;
-    for (const [a, b] of bal) if (b > 0n && a !== zeroAddress && a !== DEAD) holders++;
-    return { holders, deployer: bal.get(deployer) ?? 0n };
+  const checkBlock = blockAt(firstAt), endBlock = blockAt(firstAt + RUG_HORIZON);
+
+  // one pass over the log: balances and holder count kept up to date, peaks tracked after the check
+  const bal = new Map<string, bigint>();
+  let holders = 0, holdersAtCheck = -1, peakHolders = 0, depPeak = 0n;
+  const counts = (a: string) => a !== zeroAddress && a !== DEAD;
+  const move = (a: string, d: bigint) => {
+    const before = bal.get(a) ?? 0n, after = before + d;
+    bal.set(a, after);
+    if (counts(a)) { if (before <= 0n && after > 0n) holders++; else if (before > 0n && after <= 0n) holders--; }
   };
-  const at = snapshot(checkBlock), now = snapshot(undefined);
-  const heldPct = Number((at.deployer * 1_000_000n) / supply) / 10_000;
-  const soldPct = at.deployer > 0n ? Math.max(0, Number(((at.deployer - now.deployer) * 10_000n) / at.deployer) / 100) : 0;
-  const dumped = heldPct >= 0.5 && soldPct >= 90;
-  const exodus = at.holders >= 20 && now.holders <= at.holders / 2;
+  const afterCheck = () => {
+    if (holdersAtCheck < 0) holdersAtCheck = holders;
+    peakHolders = Math.max(peakHolders, holders);
+    const d = bal.get(deployer) ?? 0n;
+    if (d > depPeak) depPeak = d;
+  };
+  for (const t of transfers) {
+    if (t.block > endBlock) break;
+    if (t.block > checkBlock) afterCheck(); // the state just before this transfer is post-check
+    const from = t.from.toLowerCase(), to = t.to.toLowerCase();
+    if (from !== zeroAddress) move(from, -t.value);
+    move(to, t.value);
+    if (t.block > checkBlock) afterCheck();
+  }
+  afterCheck(); // also covers tokens with no transfers after the check
+  const depEnd = bal.get(deployer) ?? 0n;
+
+  const deployerPeakPct = Number((depPeak * 1_000_000n) / supply) / 10_000;
+  const deployerSoldPct = depPeak > 0n ? Math.max(0, Number(((depPeak - depEnd) * 10_000n) / depPeak) / 100) : 0;
+  const dumped = deployerPeakPct >= 0.5 && deployerSoldPct >= 90;
+  const exodus = peakHolders >= 20 && holders <= peakHolders / 2;
   return {
-    token, firstScore, firstAt, evaluatedAt: Date.now(),
-    deployerHeldPct: heldPct, deployerSoldPct: soldPct, holdersAt: at.holders, holdersNow: now.holders,
+    token, firstScore, firstAt, evaluatedAt: Date.now(), horizonHours: RUG_HORIZON / 3600_000,
+    holdersAtCheck, peakHolders, holdersAtHorizon: holders, deployerPeakPct, deployerSoldPct,
     dumped, exodus, rug: dumped || exodus,
   };
 }
@@ -180,7 +205,7 @@ const TRACTION = 10;
 
 export function rugSummary() {
   // most launches have nobody in them to rug, so the headline counts tokens people actually bought
-  const all = rugs.values().filter(o => o.holdersAt >= TRACTION);
+  const all = rugs.values().filter(o => o.peakHolders >= TRACTION);
   const allTokens = rugs.values().length;
   const buckets = LEVELS.map(L => {
     const rows = all.filter(o => o.firstScore >= L.lo && o.firstScore <= L.hi);
@@ -201,9 +226,9 @@ export function rugSummary() {
     // how many times more often high-risk tokens were rugged than low-risk ones
     lift: low.rugPct && high.rugPct !== null ? Math.round((high.rugPct / low.rugPct) * 10) / 10 : null,
     method: {
-      rug: 'after Tell first scored the token, the deployer sold 90% or more of what they held (if they held at least 0.5% of supply), or the number of holders fell by half (from at least 20)',
-      window: 'each token is looked at once, 1 to 7 days after its first check, rebuilt from its on-chain transfer log',
-      sample: `tokens with at least ${TRACTION} holders at the first check; launches nobody bought have nothing to rug`,
+      rug: 'within 3 days after Tell first scored the token: the deployer sold 90% or more of the most they held after the check (if that was at least 0.5% of supply), or the token lost half of its peak holders (from at least 20)',
+      window: 'every token is judged on the same clock: its state exactly 3 days after the first check, rebuilt from the on-chain transfer log',
+      sample: `tokens that reached at least ${TRACTION} holders after the first check; launches nobody bought have nothing to rug`,
       excluded: 'anything that happened before the first check (Tell had already seen it), tokens not launched on Pons, tokens with more than 40,000 transfers',
     },
   };

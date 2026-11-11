@@ -107,9 +107,9 @@ footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13p
     <div class="box">
       <dl id="method">
         <dt>Score</dt><dd>The first score Tell gave the token, before anyone knew how it would end.</dd>
-        <dt>Rugged</dt><dd>After that first check, the deployer sold 90% or more of what they held (if they held at least 0.5% of supply), or half of the holders left (from at least 20).</dd>
-        <dt>Sample</dt><dd>Tokens with at least 10 holders at the first check. Most launches never get a second buyer, so there is nobody in them to rug.</dd>
-        <dt>Window</dt><dd>Each token is looked at once, 1 to 7 days after its first check, rebuilt from its on-chain transfer log. The result is frozen.</dd>
+        <dt>Rugged</dt><dd>Within 3 days of that first check, the deployer sold 90% or more of the most they held after it (if that was at least 0.5% of supply), or the token lost half of its peak holders (from at least 20).</dd>
+        <dt>Sample</dt><dd>Tokens that reached at least 10 holders after the first check. Tell checks launches in their first minutes, before most buyers arrive; launches nobody bought have nothing to rug.</dd>
+        <dt>Clock</dt><dd>Every token is judged the same way: its state exactly 3 days after the first check, rebuilt from its on-chain transfer log. The result is frozen.</dd>
         <dt>Not counted</dt><dd>Anything that happened before the first check (Tell had already seen it and scored it), tokens not launched on Pons, tokens with more than 40,000 transfers, stablecoins and tokenized stocks.</dd>
       </dl>
     </div>
@@ -149,7 +149,7 @@ fetch('/api/v1/accuracy').then(r => r.json()).then(a => {
 
   if (r.tokens < MIN_RUG_SAMPLE) {
     document.getElementById('h-sample').textContent = 'collecting data';
-    body.innerHTML = `<div class="collecting">Tell has rug-checked ${fmt(r.evaluated)} tokens so far, ${fmt(r.tokens)} of them with real buyers. The comparison appears once ${MIN_RUG_SAMPLE} tokens with buyers are a day past their first check. New ones are added every 30 minutes.</div>`;
+    body.innerHTML = `<div class="collecting">Tell has rug-checked ${fmt(r.evaluated)} tokens so far, ${fmt(r.tokens)} of them with real buyers. The comparison appears once ${MIN_RUG_SAMPLE} tokens with buyers are 3 days past their first check. New ones are added every 15 minutes.</div>`;
   } else {
     document.getElementById('h-sample').textContent = `${fmt(r.tokens)} tokens with buyers · ${fmt(r.evaluated)} checked`;
     // said plainly either way: if the score stops separating outcomes, this page shows it
@@ -163,7 +163,7 @@ fetch('/api/v1/accuracy').then(r => r.json()).then(a => {
     const max = Math.max(...r.buckets.map(b => b.rugPct ?? 0), 1);
     body.innerHTML = `
       <h2>Rugged <em>after the check.</em></h2>
-      <p class="sub">Share of tokens where the deployer dumped or the holders ran after Tell first scored them, by that first score.</p>
+      <p class="sub">Share of tokens where, within 3 days of Tell first scoring them, the deployer dumped or the holders ran. Grouped by that first score.</p>
       ${bars(r.buckets, 'rugPct', max)}
       <h2>The <em>numbers.</em></h2>
       <div class="tbl"><table>
