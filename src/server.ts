@@ -25,8 +25,6 @@ const PAGES: Record<string, URL> = {
   proof: new URL('../web/proof.html', import.meta.url),
   accuracy: new URL('../web/accuracy.html', import.meta.url),
   token: new URL('../web/token.html', import.meta.url),
-  // redesign preview; becomes the homepage once approved
-  new: new URL('../web/index-new.html', import.meta.url),
 };
 const TYPES: Record<string, string> = { webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', js: 'text/javascript; charset=utf-8' };
 const RATE_LIMIT = 20; // checks per IP per minute
@@ -103,7 +101,8 @@ createServer(async (req, res) => {
     if (path === '/proof') return page(req, res, 'proof');
     if (path === '/accuracy') return page(req, res, 'accuracy');
     if (path === '/token') return page(req, res, 'token');
-    if (path === '/new') return page(req, res, 'new');
+    // the redesign preview lived here; links shared during review land on the homepage
+    if (path === '/new') { res.writeHead(301, { location: '/' }); return res.end(); }
     if (path === '/robots.txt') { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('User-agent: *\nAllow: /\n'); }
     if (path === '/llms.txt') { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); return res.end(llmsTxt(config.publicUrl || 'https://tell.markets')); }
 

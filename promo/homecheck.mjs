@@ -1,0 +1,20 @@
+// Homepage after the swap: /new redirects, a report link renders, the check form works.
+import puppeteer from 'puppeteer';
+const base = process.argv[2];
+const browser = await puppeteer.launch({ executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1440, height: 900 });
+const errors = []; page.on('pageerror', e => errors.push(e.message));
+const r = await page.goto(base + '/new', { waitUntil: 'domcontentloaded' });
+console.log('/new ->', page.url(), r.status());
+console.log('title:', await page.title(), '| has new sections:', await page.evaluate(() => !!document.querySelector('#rugs') && !!document.querySelector('#verify')));
+await page.goto(base + '/t/0x45C83b37C5BAF4dad26f3845C28295e2DE010962', { waitUntil: 'networkidle2', timeout: 120_000 });
+await page.waitForFunction(() => /HOOD/.test(document.querySelector('#report-body')?.innerText || ''), { timeout: 120_000 }).catch(() => errors.push('report link did not render'));
+console.log('report link:', await page.evaluate(() => (document.querySelector('#report-body')?.innerText || '').split('\n').slice(0, 4).join(' | ')));
+await page.goto(base + '/', { waitUntil: 'networkidle2' });
+await page.type('#addr', '0x45C83b37C5BAF4dad26f3845C28295e2DE010962');
+await page.click('#form button[type=submit]');
+await page.waitForFunction(() => /HOOD/.test(document.querySelector('#report-body')?.innerText || ''), { timeout: 120_000 }).catch(() => errors.push('check form did not render a report'));
+console.log('check form:', await page.evaluate(() => document.querySelector('#status')?.textContent));
+console.log(errors.length ? 'ERRORS: ' + errors.join(' | ') : 'no errors');
+await browser.close();

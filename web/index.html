@@ -314,6 +314,126 @@ footer { padding: 40px 0 56px; border-top: 1px solid var(--line); font-size: 13p
 footer .wrap { display: flex; flex-direction: column; gap: 12px; }
 @media (min-width: 768px) { footer .wrap { flex-direction: row; justify-content: space-between; } }
 footer a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ================= v2: scenes, scale, square ================= */
+:root { --bone: #efe9df; --bone-ink: #1d0f0e; --blood: #1c0205; --crimson: #9b0f17; }
+.btn, .check-form input, .nav-cta, .report-links a, .report-links button, .badge, .risk-tag { border-radius: 2px; }
+.btn { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; padding: 15px 22px; }
+.btn-ghost { text-transform: none; font-family: var(--sans); font-size: 14px; letter-spacing: 0; }
+.btn-ghost .arr { border-radius: 2px; }
+.hero h1 { font-size: clamp(60px, 7.8vw, 128px); max-width: 760px; line-height: .86; letter-spacing: -.03em; }
+.hero .lead { font-size: 18px; max-width: 520px; }
+.stats { gap: 56px; }
+.stat b { font-size: 48px; }
+
+section { padding: clamp(96px, 12vw, 168px) 0; border-top: 0; position: relative; }
+.sec-head h2 { font-size: clamp(56px, 8vw, 128px); line-height: .86; letter-spacing: -.03em; }
+.mega { font-family: var(--serif); font-weight: 400; font-size: clamp(58px, 10.4vw, 172px); line-height: .84; letter-spacing: -.035em; margin-top: 22px; }
+.mega em { font-style: italic; }
+.mega-sub { max-width: 580px; font-size: 18px; line-height: 1.55; margin-top: 30px; color: var(--muted); }
+section .label { letter-spacing: .18em; }
+
+/* square buttons */
+.sq { display: inline-flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+  border: 1px solid currentColor; padding: 16px 22px; margin-top: 40px; transition: background .2s, color .2s, transform .2s; }
+.sq span { transition: transform .25s; } .sq:hover span { transform: translateX(4px); }
+.sq:hover { background: rgba(255,255,255,.08); }
+.sq-cream { background: var(--bone); color: var(--bone-ink); border-color: var(--bone); }
+.sq-cream:hover { background: #fff; }
+.sq-ink { background: var(--bone-ink); color: var(--bone); border-color: var(--bone-ink); }
+.sq-ink:hover { background: #000; }
+.sq-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 44px; } .sq-row .sq { margin-top: 0; }
+@media (max-width: 760px) {
+  .sc-blood .art { opacity: .5; }
+  .sc-blood .art-shade { background: linear-gradient(180deg, rgba(28,2,5,.6), rgba(28,2,5,.88) 45%, var(--blood)); }
+  .mega-sub { font-size: 16px; }
+}
+
+/* bone scenes */
+.sc-bone { background: var(--bone); color: var(--bone-ink); }
+.sc-bone .label { color: var(--crimson); }
+.sc-bone .mega-sub { color: #5a4744; }
+.sc-bone .mega em { color: var(--crimson); }
+.nums { display: grid; gap: 0; margin-top: 88px; border-top: 1px solid rgba(29,15,14,.18); }
+@media (min-width: 760px) { .nums { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .nums { grid-template-columns: repeat(3, 1fr); } }
+.num { padding: 34px 28px 40px 0; border-bottom: 1px solid rgba(29,15,14,.18); }
+.num i { display: block; font-family: var(--serif); font-style: normal; font-size: 84px; line-height: .8; color: var(--crimson); letter-spacing: -.03em; }
+.num b { display: block; font-family: var(--serif); font-weight: 400; font-size: 36px; margin-top: 22px; }
+.num p { color: #5a4744; font-size: 15px; margin-top: 8px; max-width: 340px; }
+
+/* art scenes */
+.sc-art { overflow: hidden; min-height: 92svh; display: flex; align-items: center; }
+.sc-art .wrap { position: relative; z-index: 2; width: 100%; }
+.art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; image-rendering: pixelated; }
+.art-shade { position: absolute; inset: 0; z-index: 1; }
+.art-credit { position: absolute; right: 16px; bottom: 12px; z-index: 2; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: rgba(255,255,255,.5); }
+.sc-blood { background: var(--blood); color: var(--bone); }
+.sc-blood .art { opacity: .78; }
+.sc-blood .art-shade { background: linear-gradient(90deg, var(--blood) 0%, rgba(28,2,5,.92) 34%, rgba(28,2,5,.35) 70%, rgba(28,2,5,.15) 100%), linear-gradient(0deg, var(--blood), transparent 30%); }
+.sc-blood .label, .sc-blood .mega-sub { color: rgba(239,233,223,.72); }
+.sc-blood .mega em { color: #e0898c; }
+.sc-red { background: var(--crimson); color: #fff; }
+.art-right { left: auto; right: 0; width: auto; max-width: 62%; height: 100%; object-fit: cover; object-position: left center;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 28%); mask-image: linear-gradient(90deg, transparent 0%, #000 28%); }
+.art-shade-red { background: linear-gradient(90deg, var(--crimson) 0%, rgba(155,15,23,.9) 38%, rgba(155,15,23,0) 62%); }
+.sc-red .label, .sc-red .mega-sub { color: rgba(255,255,255,.78); }
+@media (max-width: 900px) { .art-right { max-width: none; width: 100%; opacity: .35; } .art-shade-red { background: rgba(155,15,23,.55); } }
+
+.giant-row { display: flex; flex-wrap: wrap; gap: 28px 64px; margin-top: 56px; }
+.giant-row b { display: block; font-family: var(--serif); font-weight: 400; font-size: clamp(64px, 8.4vw, 132px); line-height: .85; letter-spacing: -.03em; }
+.giant-row .label { display: block; margin-top: 12px; }
+
+/* agents */
+.sc-ink { background: var(--ink); }
+.sc-ink .agent-grid { margin-top: 72px; }
+.agent-code { border-radius: 2px; }
+.agent-code pre { border-radius: 2px; }
+.price-grid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+@media (min-width: 700px) { .price-grid { grid-template-columns: repeat(3, 1fr); } }
+.price-grid > div { background: var(--ink); padding: 26px; }
+.price-grid b { display: block; font-family: var(--serif); font-weight: 400; font-size: clamp(56px, 6vw, 88px); line-height: .9; margin: 18px 0 10px; letter-spacing: -.02em; }
+.price-grid p { color: var(--muted); font-size: 14px; }
+
+/* token */
+.token-wrap { display: grid; gap: 56px; align-items: center; }
+@media (min-width: 1000px) { .token-wrap { grid-template-columns: 1fr 1fr; } }
+.token-art { width: 100%; max-width: 640px; height: auto; display: block; justify-self: center; }
+.share { display: flex; align-items: flex-end; gap: 20px; margin-top: 44px; }
+.share b { font-family: var(--serif); font-weight: 400; font-size: clamp(110px, 15vw, 240px); line-height: .78; color: var(--crimson); letter-spacing: -.05em; }
+.share span { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #5a4744; padding-bottom: 14px; }
+.sc-bone .official { border-radius: 2px; border-color: rgba(155,15,23,.35); background: rgba(155,15,23,.05); margin-top: 40px; }
+.sc-bone .off-l p { color: #5a4744; }
+.sc-bone .off-r code, .sc-bone .off-r button, .sc-bone .off-r a { border-color: rgba(29,15,14,.25); color: var(--bone-ink); border-radius: 2px; }
+
+/* faq + final */
+summary { font-size: clamp(24px, 2.6vw, 34px); }
+details { padding: 28px 0; }
+.final { padding: clamp(120px, 14vw, 200px) 0; }
+.final .mega { color: #fff; }
+.final .mega em { color: #ffd6d2; }
+
+/* wallet pill matches the square buttons */
+[data-wallet] .tw-btn { border-radius: 2px; padding: 9px 16px; }
+[data-wallet] .tw-dot { border-radius: 1px; }
+[data-wallet] .tw-menu, [data-wallet] .tw-menu button { border-radius: 2px; }
+
+/* motion: headings rise word by word, blocks ease in (set up by the script at the bottom) */
+.w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .08em .14em 0; margin: 0 -.08em -.14em 0; }
+.w > span { display: inline-block; will-change: transform; }
+.js-motion .mega .w > span { transform: translateY(110%); }
+.js-motion [data-reveal] { opacity: 0; transform: translateY(28px); }
+.sc-art .art, .token-art, .statue { will-change: transform; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.sq, .btn, .num, .price-grid > div { transition: transform .35s cubic-bezier(.2,.7,.2,1), background .25s, color .25s, border-color .25s; }
+.num:hover i { color: var(--bone-ink); }
+.num i { transition: color .3s; }
+.price-grid > div:hover { background: #121010; }
+
+/* report section keeps the product dark, with the new heading scale */
+#report .frame, #report .summary, #report .group { border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -427,75 +547,44 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
   </div>
 </section>
 
-<section id="checks">
+<section id="checks" class="sc-bone">
   <div class="wrap">
-    <div class="sec-head">
-      <div>
-        <span class="label">02 / Checks</span>
-        <h2>Fifteen minutes of homework,<br><em>in seconds.</em></h2>
-      </div>
-      <p>The explorer, the holder map, the deployer's history, the website. Tell opens all of it so you don't have to.</p>
-    </div>
-    <div class="list">
-      <div class="item"><span class="label">01</span><div><h3>Contract</h3><p>Who owns it, whether it can mint, pause, blacklist or change taxes, and whether the code can be swapped behind a proxy.</p></div></div>
-      <div class="item"><span class="label">02</span><div><h3>Market</h3><p>Liquidity, pool age, sell pressure and the pair it trades against, straight from the DEX.</p></div></div>
-      <div class="item"><span class="label">03</span><div><h3>Holders</h3><p>Top-wallet share without pools, curves and lockers, wallets seeded from one address, and snipers from the first blocks. Built from every transfer since launch.</p></div></div>
-      <div class="item"><span class="label">04</span><div><h3>Deployer</h3><p>Who pressed launch, what they still hold, whether they dumped, and every token they launched before through the same factory.</p></div></div>
-      <div class="item"><span class="label">05</span><div><h3>Website</h3><p>An AI read of the project site: a working product or just a waitlist, wallet-harvesting forms, too-good-to-be-true promises, and whether the contract address on the site matches.</p></div></div>
+    <span class="label">02 // Checks</span>
+    <h2 class="mega">Fifteen minutes<br>of homework. <em>Ten seconds.</em></h2>
+    <p class="mega-sub">The explorer, the holder map, the deployer's history, the website. Tell opens all of it so you don't have to.</p>
+    <div class="nums">
+      <div class="num"><i>01</i><b>Contract</b><p>Who owns it, whether it can mint, pause, blacklist or change taxes, and whether the code can be swapped behind a proxy.</p></div>
+      <div class="num"><i>02</i><b>Holders</b><p>Top wallets without pools and curves, wallets seeded from one address, snipers from the first blocks. Every transfer since launch.</p></div>
+      <div class="num"><i>03</i><b>Deployer</b><p>Who pressed launch, what they still hold, whether they dumped, and every token they launched before.</p></div>
+      <div class="num"><i>04</i><b>Website</b><p>An AI read of the project site: real product or waitlist, wallet-harvesting forms, promises that don't add up.</p></div>
+      <div class="num"><i>05</i><b>Promises</b><p>What the site claims against what the chain shows: burns that never happened, audits that contradict, fake launchpad links.</p></div>
+      <div class="num"><i>06</i><b>Market</b><p>Liquidity, pool age and sell pressure on Pons, Ostra, Conductor and Uniswap v3 · v4, straight from the DEX.</p></div>
     </div>
   </div>
 </section>
 
-<section id="coverage">
+<section id="rugs" class="sc-art sc-blood">
+  <img class="art" src="/assets/art-death.webp" alt="" loading="lazy">
+  <div class="art-shade"></div>
   <div class="wrap">
-    <div class="sec-head">
-      <div>
-        <span class="label">03 / Coverage</span>
-        <h2>Built for <em>Robinhood Chain.</em></h2>
-      </div>
-      <p>Paste a token address or any DexScreener link, including Uniswap v4 pool IDs. Tell finds the token and the pool on its own.</p>
+    <span class="label">03 // The game</span>
+    <h2 class="mega">Most launches die.<br><em>Some are killed.</em></h2>
+    <p class="mega-sub">Out of every hundred tokens launched on Pons, fewer than one is still trading a few days later. That is the table you sit at. Tell can't tell you which token wins. It tells you who is holding a knife.</p>
+    <div class="giant-row">
+      <div><b data-live="launches24h">—</b><span class="label">launched in the last 24h</span></div>
+      <div><b data-live="checked24h">—</b><span class="label">checked by Tell</span></div>
+      <div><b>&lt;1%</b><span class="label">still trading 2–7 days later</span></div>
     </div>
-    <div class="pads">
-      <span class="pad">Pons V2</span>
-      <span class="pad">Ostra</span>
-      <span class="pad">Conductor Builder Pad</span>
-      <span class="pad">Uniswap v3 · v4</span>
-      <span class="pad soon">More chains later</span>
-    </div>
+    <a class="sq" href="/launches">See today's launches <span>→</span></a>
   </div>
+  <span class="art-credit">Death and the card players · after A. van Ostade · The Met, CC0</span>
 </section>
 
-<section id="compare">
+<section id="agents" class="sc-ink">
   <div class="wrap">
-    <div class="sec-head">
-      <div>
-        <span class="label">04 / Compare</span>
-        <h2>More than a <em>bubble map.</em></h2>
-      </div>
-      <p>Holder maps show who holds. Terminals show the chart. Tell puts the whole picture in one report.</p>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <tr><th></th><th>Holder maps</th><th>Terminals</th><th class="us">Tell</th></tr>
-        <tr><td>Holder clusters</td><td class="y">✓</td><td class="n">—</td><td class="y">✓</td></tr>
-        <tr><td>Contract permissions</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
-        <tr><td>Deployer history</td><td class="n">—</td><td class="n">partial</td><td class="y">✓</td></tr>
-        <tr><td>AI website review</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
-        <tr><td>One-line verdict</td><td class="n">—</td><td class="n">—</td><td class="y">✓</td></tr>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section id="agents">
-  <div class="wrap">
-    <div class="sec-head">
-      <div>
-        <span class="label">05 / For agents</span>
-        <h2>Your bot buys fast.<br><em>Let it read first.</em></h2>
-      </div>
-      <p>Trading agents on Robinhood Chain buy tokens on their own. Tell gives them a risk check before the trade: one MCP call or one HTTP request, paid per check in USDG over x402. No account, no API key needed.</p>
-    </div>
+    <span class="label">04 // For agents</span>
+    <h2 class="mega">Your bot buys fast.<br><em>Let it read first.</em></h2>
+    <p class="mega-sub">Trading agents on Robinhood Chain buy tokens on their own. Tell gives them a risk check before the trade: one MCP call or one HTTP request, paid per check in USDG over x402.</p>
     <div class="agent-grid">
       <div class="agent-code">
         <span class="label">MCP · Claude, Cursor, any agent</span>
@@ -510,75 +599,74 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
         <span class="label" style="margin-top:18px">REST</span>
 <pre><span class="c">$</span> curl tell.markets/api/v1/check?token=0x…</pre>
       </div>
-      <div class="token-card agent-card">
-        <div><span class="label">Quick check</span><b>Free · ~3s</b><p>Contract powers and market. Served from the last full report when it is under an hour old.</p></div>
-        <div><span class="label">Full check</span><b>$0.03 USDG</b><p>Holders, deployer history, website claims and AI review. A few free a day, then x402: the agent signs, Tell settles on-chain.</p></div>
-        <div><span class="label">Proof</span><b>On-chain ledger</b><p>Every verdict is hashed into an hourly Merkle root written to Robinhood Chain. Nobody can edit a score after the fact.</p></div>
+      <div class="price-grid">
+        <div><span class="label">Quick check</span><b>Free</b><p>Contract and market in about three seconds.</p></div>
+        <div><span class="label">Full check</span><b>$0.03</b><p>Everything, in USDG over x402. A few free a day.</p></div>
+        <div><span class="label">Holders</span><b>Free</b><p>Full checks with an API key from a $TELL wallet.</p></div>
       </div>
     </div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px">
-      <a class="btn btn-cream" href="/docs" style="margin-top:0">Read the docs <span>→</span></a>
-      <a class="btn btn-ghost" href="/proof" style="margin-top:0">See the proof <span class="arr">→</span></a>
-    </div>
+    <div class="sq-row"><a class="sq sq-cream" href="/docs">Read the docs <span>→</span></a><a class="sq" href="/docs#mcp">Connect via MCP <span>→</span></a></div>
   </div>
 </section>
 
-<section id="token">
+<section id="verify" class="sc-art sc-red">
+  <img class="art art-right" src="/assets/art-medusa.webp" alt="" loading="lazy">
+  <div class="art-shade art-shade-red"></div>
   <div class="wrap">
-    <div class="sec-head">
-      <div>
-        <span class="label">06 / $TELL</span>
-        <h2>Paid by agents.<br><em>Owned by holders.</em></h2>
-      </div>
-      <p>Checks stay free for people. Agents pay per full check, and that revenue is the token's job: it is public, on-chain, and a share of it buys $TELL back.</p>
+    <span class="label">05 // Proof</span>
+    <h2 class="mega">Don't trust<br>the score.<br><em>Verify it.</em></h2>
+    <p class="mega-sub">Every verdict is hashed into an hourly Merkle root on Robinhood Chain, so no score can be edited after the fact. And every week Tell checks how its own scores held up, in public.</p>
+    <div class="giant-row">
+      <div><b data-live="verdictsOnRecord">—</b><span class="label">verdicts on record</span></div>
+      <div><b><span data-live="medianCheckSeconds">—</span>s</b><span class="label">median full check</span></div>
     </div>
-    <div class="token-card">
-      <div><span class="label">Holders</span><b>Free full checks</b><p>Sign in with your wallet, create an API key, and your agents check tokens for free while the wallet holds $TELL.</p></div>
-      <div><span class="label">Revenue</span><b>Buyback &amp; burn</b><p>A share of x402 revenue buys $TELL on the open market and burns it. Every payment and every burn is listed on <a href="/proof" style="text-decoration:underline">/proof</a>.</p></div>
-      <div><span class="label">Alerts</span><b>First look</b><p>Holders get the launch feed and new checks first, in Telegram and on the site.</p></div>
-    </div>
-    <a class="btn btn-ghost" href="/token" style="margin:20px 0 4px">How $TELL works: every flow, from launch to burn <span class="arr">→</span></a>
-    <div class="official" id="official">
-      <div class="off-l">
-        <span class="label">Official contract</span>
-        <b id="off-title">No $TELL token yet.</b>
-        <p id="off-text">The only official address will be posted here and in the pinned post on our X account. Anything called TELL before that is a fake, and Tell flags it in every check.</p>
+    <div class="sq-row"><a class="sq sq-cream" href="/proof">See the ledger <span>→</span></a><a class="sq" href="/accuracy">How accurate is Tell <span>→</span></a></div>
+  </div>
+  <span class="art-credit">Head of Medusa · after Bernini · The Met, CC0</span>
+</section>
+
+<section id="token" class="sc-bone">
+  <div class="wrap token-wrap">
+    <div>
+      <span class="label">06 // $TELL</span>
+      <h2 class="mega">Paid by agents.<br><em>Owned by holders.</em></h2>
+      <p class="mega-sub">Checks stay free for people. Agents pay per full check, and a fixed share of that revenue buys $TELL on the open market and burns it. On-chain, every time.</p>
+      <div class="share"><b>50%</b><span>of agent revenue<br>buys back and burns $TELL</span></div>
+      <div class="official" id="official">
+        <div class="off-l">
+          <span class="label">Official contract</span>
+          <b id="off-title">No $TELL token yet.</b>
+          <p id="off-text">The only official address will be posted here and pinned on our X. Anything called TELL before that is a fake, and Tell flags it in every check.</p>
+        </div>
+        <div class="off-r" id="off-addr" hidden>
+          <code id="off-ca"></code>
+          <button type="button" id="off-copy">Copy</button>
+          <a id="off-report" href="#">Check it →</a>
+        </div>
       </div>
-      <div class="off-r" id="off-addr" hidden>
-        <code id="off-ca"></code>
-        <button type="button" id="off-copy">Copy</button>
-        <a id="off-report" href="#">Check it →</a>
-      </div>
+      <div class="sq-row"><a class="sq sq-ink" href="/token">How $TELL works <span>→</span></a></div>
     </div>
+    <img class="token-art" src="/assets/art-brelan.webp" alt="" loading="lazy">
   </div>
 </section>
 
-<section id="faq">
+<section id="faq" class="sc-ink">
   <div class="wrap">
-    <div class="sec-head">
-      <div>
-        <span class="label">07 / FAQ</span>
-        <h2>Before you <em>check.</em></h2>
-      </div>
-    </div>
+    <span class="label">07 // FAQ</span>
+    <h2 class="mega" style="margin-bottom:40px">Before you <em>check.</em></h2>
     <details><summary>Is this financial advice?</summary><p>No. Tell describes what it finds on chain and on the web. It never tells you to buy or sell, and it can be wrong, so every report shows why it scored the way it did.</p></details>
     <details><summary>How is the score calculated?</summary><p>Each finding adds risk points. Critical findings, like an owner who can mint new tokens or unlocked liquidity, push the score to at least 80 on their own.</p></details>
     <details><summary>Which tokens can I check?</summary><p>Any ERC-20 on Robinhood Chain. Paste the address, or a DexScreener link to its pool.</p></details>
     <details><summary>Can my trading bot use Tell?</summary><p>Yes. Connect it to the MCP server at tell.markets/mcp or call /api/v1/check. Quick checks are free; full checks are a few free a day, then paid per check in USDG over x402. See <a href="/docs" style="text-decoration:underline">the docs</a>.</p></details>
-    <details><summary>What are "promises vs the chain" checks?</summary><p>Tell compares what a project's site says with what is on-chain: burns that never happened, an audit that is "done" and "not done" on the same page, buy links to look-alike launchpad domains, dead GitHub and app links.</p></details>
-    <details><summary>Why did a stablecoin get a low score despite owner powers?</summary><p>Stablecoins, WETH and stock tokens keep owner powers by design. Tell recognizes them and doesn't score them like a memecoin.</p></details>
+    <details><summary>Why is a token "low risk" and still dead?</summary><p>Tell looks for signs of a setup: dangerous contract powers, insiders, a deployer who dumps, a site that lies. Most launches die without anyone cheating. Low risk means no tell was found, not that the token will go up. <a href="/accuracy" style="text-decoration:underline">See how the scores hold up.</a></p></details>
   </div>
 </section>
 
 <section class="final">
   <img class="statue-ghost" src="/assets/statue.webp" alt="">
   <div class="wrap" style="position:relative">
-    <span class="label" style="color:rgba(255,255,255,.7)">Tell</span>
-    <h2 style="margin-top:16px">Every token has a tell.<br><em>Read it first.</em></h2>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:36px">
-      <a class="btn btn-cream" href="/app" style="margin-top:0">Open app <span>→</span></a>
-      <a class="btn btn-ghost" href="#top" style="margin-top:0;color:#fff">Check a token <span class="arr">→</span></a>
-    </div>
+    <h2 class="mega">Every token<br>has a tell.<br><em>Read it first.</em></h2>
+    <div class="sq-row"><a class="sq sq-cream" href="#top">Check a token <span>→</span></a><a class="sq" href="/app">Open the token map <span>↗</span></a></div>
   </div>
 </section>
 
@@ -790,7 +878,7 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 
 // Hero stats: live numbers, counted up once
 fetch('/api/v1/stats').then(r => r.json()).then(s => {
-  const vals = { checked24h: s.checked24h, medianCheckSeconds: s.medianCheckSeconds, verdictsOnRecord: s.verdictsOnRecord, lift: s.accuracy?.lift };
+  const vals = { launches24h: s.launches24h, checked24h: s.checked24h, medianCheckSeconds: s.medianCheckSeconds, verdictsOnRecord: s.verdictsOnRecord, lift: s.accuracy?.lift };
   document.querySelectorAll('[data-live]').forEach(el => {
     const v = vals[el.dataset.live];
     if (v == null) { if (el.dataset.live === 'lift') el.closest('.stat').hidden = true; return; }
@@ -815,6 +903,102 @@ document.addEventListener('tell:me', e => {
 // Shareable link: /t/0x… runs the check on load.
 const fromPath = location.pathname.match(/^\/t\/(0x[a-fA-F0-9]{40})/)?.[1];
 if (fromPath) { input.value = fromPath; run(fromPath); }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script>
+// Motion layer: smooth scroll, word-by-word headings, parallax art, count-ups.
+// Everything here is decoration; the page works and reads the same without it.
+(function () {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !window.gsap || !window.ScrollTrigger) return;
+  gsap.registerPlugin(ScrollTrigger);
+  document.documentElement.classList.add('js-motion');
+
+  // smooth scroll, driven by GSAP's ticker so ScrollTrigger stays in sync
+  if (window.Lenis) {
+    const lenis = new Lenis({ duration: 1.15, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), smoothWheel: true });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(t => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+    // in-page links (#top, #agents) glide instead of jumping
+    document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+      const id = a.getAttribute('href'); if (id.length < 2) return;
+      const el = document.querySelector(id); if (!el) return;
+      e.preventDefault(); lenis.scrollTo(el, { offset: -20 });
+    }));
+  }
+
+  // split big headings into words, keeping <em> and <br>
+  const split = el => {
+    [...el.childNodes].forEach(node => {
+      if (node.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        node.textContent.split(/(\s+)/).forEach(part => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+          const w = document.createElement('span'); w.className = 'w';
+          const i = document.createElement('span'); i.textContent = part;
+          w.appendChild(i); frag.appendChild(w);
+        });
+        node.replaceWith(frag);
+      } else if (node.nodeType === 1 && node.tagName !== 'BR') split(node);
+    });
+  };
+  document.querySelectorAll('.mega').forEach(h => {
+    split(h);
+    gsap.to(h.querySelectorAll('.w > span'), {
+      y: 0, duration: 1.15, ease: 'expo.out', stagger: 0.045,
+      scrollTrigger: { trigger: h, start: 'top 82%' },
+    });
+  });
+
+  // copy, labels, cards and buttons ease in as their section arrives
+  const ins = '.mega-sub, section .label, .nums .num, .giant-row > div, .price-grid > div, .agent-code, .sq-row, .share, .official, details, .frame';
+  document.querySelectorAll(ins).forEach(el => el.setAttribute('data-reveal', ''));
+  ScrollTrigger.batch('[data-reveal]', {
+    start: 'top 88%',
+    onEnter: els => gsap.to(els, { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: 0.08, overwrite: true }),
+  });
+
+  // art drifts slower than the page; the medusa leans in
+  document.querySelectorAll('.sc-art .art').forEach(img => {
+    gsap.fromTo(img, { yPercent: -8, scale: 1.12 }, { yPercent: 8, scale: 1, ease: 'none', scrollTrigger: { trigger: img.closest('section'), start: 'top bottom', end: 'bottom top', scrub: true } });
+  });
+  const tokenArt = document.querySelector('.token-art');
+  if (tokenArt) gsap.fromTo(tokenArt, { rotate: -6, scale: .9, opacity: 0 }, { rotate: 0, scale: 1, opacity: 1, ease: 'power2.out', scrollTrigger: { trigger: tokenArt, start: 'top 85%', end: 'center 55%', scrub: 1 } });
+  const statue = document.querySelector('.hero .statue');
+  if (statue) gsap.to(statue, { yPercent: 14, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+  const ghost = document.querySelector('.final .statue-ghost');
+  if (ghost) gsap.fromTo(ghost, { yPercent: 10 }, { yPercent: -10, ease: 'none', scrollTrigger: { trigger: '.final', start: 'top bottom', end: 'bottom top', scrub: true } });
+
+  // big numbers count up when they come into view (values arrive from /api/v1/stats)
+  const countUp = el => {
+    const m = el.textContent.match(/^([^\d]*)([\d,.]+)(.*)$/);
+    if (!m) return;
+    const to = parseFloat(m[2].replace(/,/g, '')); if (!isFinite(to)) return;
+    const dec = (m[2].split('.')[1] || '').length;
+    const o = { v: 0 };
+    gsap.to(o, { v: to, duration: 1.6, ease: 'power3.out', onUpdate: () => {
+      el.textContent = m[1] + o.v.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + m[3];
+    } });
+  };
+  document.querySelectorAll('.giant-row b, .share b').forEach(el => {
+    ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => setTimeout(() => countUp(el), 150) });
+  });
+
+  // the six checks: numerals slide in from the side
+  gsap.utils.toArray('.num i').forEach((n, i) => gsap.from(n, { xPercent: -40, opacity: 0, duration: 1, ease: 'expo.out', delay: (i % 3) * 0.08, scrollTrigger: { trigger: n, start: 'top 90%' } }));
+
+  // buttons lean toward the pointer a little
+  document.querySelectorAll('.sq, .btn-cream').forEach(b => {
+    b.addEventListener('pointermove', e => { const r = b.getBoundingClientRect(); gsap.to(b, { x: (e.clientX - r.left - r.width / 2) * 0.12, y: (e.clientY - r.top - r.height / 2) * 0.2, duration: .4, ease: 'power3.out' }); });
+    b.addEventListener('pointerleave', () => gsap.to(b, { x: 0, y: 0, duration: .6, ease: 'elastic.out(1, .5)' }));
+  });
+
+  addEventListener('load', () => ScrollTrigger.refresh());
+})();
 </script>
 </body>
 </html>
