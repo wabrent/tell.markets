@@ -22,7 +22,12 @@
   .tw-menu small { color: #9a958d; display: block; margin-top: 4px; }
   .tw-menu button { margin-top: 12px; width: 100%; border: 1px solid rgba(255,255,255,.2); background: none; color: inherit; border-radius: 9999px; padding: 7px; cursor: pointer; font: inherit; }
   .tw-menu button:hover { border-color: #fff; }
-  .tw-err { color: #ffb4b6; margin-top: 8px; font-size: 12px; }`;
+  .tw-err { color: #ffb4b6; margin-top: 8px; font-size: 12px; }
+  /* dark, thin scrollbars everywhere instead of the browser's white ones */
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }`;
   const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
 
   async function refreshMe() {
@@ -49,9 +54,20 @@
   }
   document.addEventListener('click', e => document.querySelectorAll('.tw.open').forEach(h => { if (!h.contains(e.target)) h.classList.remove('open'); }));
 
+  // EIP-6963: every installed wallet announces itself, so several extensions fighting over
+  // window.ethereum don't break sign-in. Known EVM wallets first; window.ethereum as a fallback.
+  const wallets = [];
+  window.addEventListener('eip6963:announceProvider', e => { if (e.detail?.provider) wallets.push(e.detail); });
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+  const pickWallet = () => {
+    const rank = w => /metamask/i.test(w.info?.rdns || '') ? 0 : /rabby/i.test(w.info?.rdns || '') ? 1 : /coinbase|okx|trust|rainbow/i.test(w.info?.rdns || '') ? 2 : 3;
+    return [...wallets].sort((a, b) => rank(a) - rank(b))[0]?.provider || window.ethereum;
+  };
+
   async function signIn(host) {
     const err = host.querySelector('.tw-err');
-    const eth = window.ethereum;
+    err.textContent = '';
+    const eth = pickWallet();
     if (!eth) { err.textContent = 'No wallet found. Install MetaMask or Rabby, then reload.'; return; }
     try {
       const [address] = await eth.request({ method: 'eth_requestAccounts' });
@@ -62,7 +78,9 @@
       host.classList.remove('open');
       refreshMe();
     } catch (e) {
-      err.textContent = e?.code === 4001 ? 'Request was cancelled in the wallet.' : (e?.message || 'Sign-in failed');
+      err.textContent = e?.code === 4001 ? 'Request was cancelled in the wallet.'
+        : e?.code === -32002 ? 'Your wallet already has a request open. Open the wallet and approve or reject it.'
+        : (e?.message || 'Sign-in failed');
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refreshMe); else refreshMe();

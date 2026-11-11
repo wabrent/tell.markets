@@ -222,7 +222,8 @@ tr:last-child td { border-bottom: 0; }
 .agent-grid { display: grid; gap: 16px; }
 @media (min-width: 1000px) { .agent-grid { grid-template-columns: 1fr 1.4fr; align-items: stretch; } }
 .agent-code { border: 1px solid var(--line); border-radius: 12px; padding: 24px; background: linear-gradient(160deg, rgba(255,255,255,0.03), transparent); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.agent-code pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.55; color: var(--text); background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; }
+.agent-code pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--text); background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agent-code pre .k { color: #e8b3b5; } .agent-code pre .s { color: #b9d3a8; } .agent-code pre .c { color: var(--dim); }
 @media (min-width: 768px) { .agent-card { grid-template-columns: 1fr; } }
 @media (min-width: 1300px) { .agent-card { grid-template-columns: repeat(3, 1fr); } }
 
@@ -499,12 +500,15 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
       <div class="agent-code">
         <span class="label">MCP · Claude, Cursor, any agent</span>
 <pre>{
-  "mcpServers": {
-    "tell": { "type": "http", "url": "https://tell.markets/mcp" }
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"tell"</span>: {
+      <span class="k">"type"</span>: <span class="s">"http"</span>,
+      <span class="k">"url"</span>: <span class="s">"https://tell.markets/mcp"</span>
+    }
   }
 }</pre>
         <span class="label" style="margin-top:18px">REST</span>
-<pre>curl "https://tell.markets/api/v1/check?token=0x…&amp;mode=quick"</pre>
+<pre><span class="c">$</span> curl tell.markets/api/v1/check?token=0x…</pre>
       </div>
       <div class="token-card agent-card">
         <div><span class="label">Quick check</span><b>Free · ~3s</b><p>Contract powers and market. Served from the last full report when it is under an hour old.</p></div>

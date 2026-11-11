@@ -7,3 +7,4 @@ promo/*.mp4
 hf-space/
 # server address and SSH details: keep off the public repo
 deploy/ADD-PROJECT.md
+promo/art-src/

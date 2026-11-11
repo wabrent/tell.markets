@@ -19,8 +19,10 @@ export function newNonce() {
   return n;
 }
 
+// Wallets hand out lowercase addresses; the message always uses the checksummed form so the text
+// signed in the browser and the text rebuilt here for verification are byte-identical.
 export const signInMessage = (address: string, nonce: string) =>
-  `Sign in to Tell (tell.markets)\n\nThis only proves you own this wallet. It costs nothing and sends no transaction.\n\nAddress: ${address}\nNonce: ${nonce}`;
+  `Sign in to Tell (tell.markets)\n\nThis only proves you own this wallet. It costs nothing and sends no transaction.\n\nAddress: ${getAddress(address)}\nNonce: ${nonce}`;
 
 export async function verify(address: string, nonce: string, signature: Hex): Promise<string | undefined> {
   if (!isAddress(address) || !nonces.has(nonce)) return undefined;

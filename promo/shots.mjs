@@ -4,7 +4,7 @@ const base = process.argv[2];
 const browser = await puppeteer.launch({ executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true });
 const page = await browser.newPage();
 for (const [name, path, w, h, sel] of [
-  ...(process.argv[3] ? process.argv[3].split(',').map(s => s.split(':')) : [
+  ...(process.argv[3] ? process.argv[3].split(',').map(s => s.split(':')).map(([n, p, w, h, sel]) => [n, p, +w, +h, sel]) : [
     ['accuracy', '/accuracy', 1440, 1700], ['token', '/token', 1440, 2200], ['home', '/', 1440, 900],
     ['accuracy-mobile', '/accuracy', 390, 1500], ['token-mobile', '/token', 390, 1800],
   ]),
