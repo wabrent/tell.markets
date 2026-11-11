@@ -28,10 +28,10 @@ const designs = {
     <div style="position:absolute;bottom:46px;left:0;right:0;text-align:center;font:500 20px TellMono;letter-spacing:.5em;color:#1d0f0e;margin-left:.5em">TELL</div>
     <div class="grain" style="opacity:.1"></div></body>` },
   'banner': { w: 1500, h: 500, html: `<body style="--w:1500px;--h:500px;background:radial-gradient(90% 140% at 78% 40%,#b0121c 0%,#9b0f17 45%,#6a080e 100%)">
-    <img src="${head}" style="position:absolute;right:-10px;top:-40px;height:620px;image-rendering:pixelated;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 26%)">
-    <div style="position:absolute;left:96px;top:74px">
+    <img src="${head}" style="position:absolute;right:-70px;top:-40px;height:620px;image-rendering:pixelated;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 26%)">
+    <div style="position:absolute;left:430px;top:70px">
       <div style="font:500 15px TellMono;letter-spacing:.26em;color:rgba(255,255,255,.78)">LAUNCH CHECKS · ROBINHOOD CHAIN</div>
-      <div style="font:400 128px/.86 TellSerif;letter-spacing:-.03em;color:#fff;margin-top:22px">Read the tell<br>before you <i style="color:#ffd6d2">buy.</i></div>
+      <div style="font:400 112px/.86 TellSerif;letter-spacing:-.03em;color:#fff;margin-top:22px">Read the tell<br>before you <i style="color:#ffd6d2">buy.</i></div>
       <div style="display:flex;gap:14px;margin-top:30px;font:500 15px TellMono;letter-spacing:.16em;color:#fff">
         <span style="background:#efe9df;color:#1d0f0e;padding:9px 14px">TELL.MARKETS</span>
         <span style="border:1px solid rgba(255,255,255,.55);padding:8px 14px">FOR PEOPLE &amp; AGENTS</span>
@@ -53,8 +53,8 @@ const img = n => `data:image/png;base64,${b64(`${n}.png`)}`;
 await page.setViewport({ width: 1500, height: 820 });
 await page.setContent(`<!doctype html><html><body style="margin:0;background:#000;font:14px sans-serif;color:#aaa">
   <div style="position:relative;width:1500px;height:500px"><img src="${img('banner')}" style="display:block">
-    <img src="${img('avatar-a')}" style="position:absolute;left:30px;top:410px;width:200px;height:200px;border-radius:50%;border:5px solid #000"></div>
-  <div style="display:flex;gap:60px;align-items:center;padding:130px 0 0 280px">
+    <img src="${img('avatar-a')}" style="position:absolute;left:40px;top:333px;width:335px;height:335px;border-radius:50%;border:10px solid #000"></div>
+  <div style="display:flex;gap:60px;align-items:center;padding:190px 0 0 430px">
     ${['avatar-a', 'avatar-b', 'avatar-c'].map(n => `<div style="text-align:center"><img src="${img(n)}" style="width:134px;height:134px;border-radius:50%"><br><img src="${img(n)}" style="width:40px;height:40px;border-radius:50%;margin-top:10px"><div>${n}</div></div>`).join('')}
   </div></body></html>`, { waitUntil: 'load' });
 await page.screenshot({ path: new URL('preview.png', import.meta.url).pathname.slice(1) });
