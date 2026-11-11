@@ -54,20 +54,20 @@ nav .wrap { display: flex; align-items: center; justify-content: space-between; 
 /* toolbar */
 .bar { position: sticky; top: 0; z-index: 10; background: rgba(11,11,12,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .bar .wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
-.tabs { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line-2); border-radius: 9999px; }
-.tabs button { border: 0; background: none; padding: 6px 14px; border-radius: 9999px; font-size: 13px; cursor: pointer; color: var(--muted); transition: background .2s, color .2s; }
+.tabs { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--line-2); border-radius: 2px; }
+.tabs button { border: 0; background: none; padding: 6px 14px; border-radius: 2px; font-size: 13px; cursor: pointer; color: var(--muted); transition: background .2s, color .2s; }
 .tabs button.on { background: var(--text); color: var(--ink); }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.chip { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); border-radius: 9999px; padding: 6px 11px; background: none; cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; transition: color .2s, border-color .2s; }
+.chip { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); border-radius: 2px; padding: 6px 11px; background: none; cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; transition: color .2s, border-color .2s; }
 .chip i { width: 7px; height: 7px; border-radius: 50%; }
 .chip.on { color: var(--text); border-color: var(--muted); }
-.search { margin-left: auto; min-width: 200px; flex: 0 1 280px; background: var(--ink-2); border: 1px solid var(--line-2); color: var(--text); border-radius: 9999px; padding: 8px 14px; font: 12.5px var(--mono); outline: none; }
+.search { margin-left: auto; min-width: 200px; flex: 0 1 280px; background: var(--ink-2); border: 1px solid var(--line-2); color: var(--text); border-radius: 2px; padding: 8px 14px; font: 12.5px var(--mono); outline: none; }
 .search:focus { border-color: var(--muted); }
-select.sort { background: var(--ink-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 9999px; padding: 7px 12px; font: 12.5px var(--sans); }
+select.sort { background: var(--ink-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 2px; padding: 7px 12px; font: 12.5px var(--sans); }
 
 /* rows */
 .list { display: grid; gap: 8px; padding: 24px 0 80px; }
-.row { display: grid; grid-template-columns: 44px 1.3fr 88px 2.4fr 120px 150px; gap: 16px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px;
+.row { display: grid; grid-template-columns: 44px 1.3fr 88px 2.4fr 120px 150px; gap: 16px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 3px;
   background: linear-gradient(90deg, rgba(255,255,255,0.015), transparent); transition: border-color .25s, background .25s, transform .25s cubic-bezier(.2,.7,.2,1); }
 .row.anim { animation: row-in .55s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0s); }
 @keyframes row-in { from { opacity: 0; transform: translateY(12px); } }
@@ -90,7 +90,7 @@ select.sort { background: var(--ink-2); color: var(--text); border: 1px solid va
 .t-ok { --c: var(--green); } .t-mid { --c: var(--mid); } .t-warn { --c: var(--amber); } .t-bad { --c: var(--bad); } .t-na { --c: var(--dim); }
 .score small { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--c); }
 .checking { font-family: var(--mono); font-size: 10.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
-.check-btn { justify-self: start; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); background: none; border-radius: 9999px; padding: 5px 12px; cursor: pointer; color: var(--text); transition: border-color .2s, background .2s; }
+.check-btn { justify-self: start; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); background: none; border-radius: 2px; padding: 5px 12px; cursor: pointer; color: var(--text); transition: border-color .2s, background .2s; }
 .check-btn:hover { border-color: var(--text); background: rgba(255,255,255,.05); }
 .checking i { width: 6px; height: 6px; border-radius: 50%; background: var(--bad); animation: blink 1s infinite; }
 @keyframes blink { 50% { opacity: .2; } }
@@ -98,14 +98,14 @@ select.sort { background: var(--ink-2); color: var(--text); border: 1px solid va
 .nums { font-family: var(--mono); font-size: 11.5px; color: var(--muted); display: grid; gap: 2px; }
 .nums span b { color: var(--text); font-weight: 400; }
 .acts { display: flex; gap: 6px; justify-content: flex-end; }
-.acts a, .acts button { border: 1px solid var(--line-2); border-radius: 9999px; padding: 6px 12px; font-size: 12px; background: none; cursor: pointer; white-space: nowrap; }
+.acts a, .acts button { border: 1px solid var(--line-2); border-radius: 2px; padding: 6px 12px; font-size: 12px; background: none; cursor: pointer; white-space: nowrap; }
 .acts a:hover, .acts button:hover { border-color: var(--text); }
 .acts .primary { background: var(--text); color: var(--ink); border-color: var(--text); }
 .delta { font-family: var(--mono); font-size: 11px; }
 .delta.up { color: var(--bad); } .delta.down { color: var(--green); }
 .empty { text-align: center; padding: 80px 0; color: var(--muted); }
 .empty h3 { font-family: var(--serif); font-weight: 400; font-size: 40px; color: var(--text); }
-.skel { height: 72px; border-radius: 14px; background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.06), rgba(255,255,255,0.02)); background-size: 200% 100%; animation: sk 1.4s infinite; }
+.skel { height: 72px; border-radius: 3px; background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.06), rgba(255,255,255,0.02)); background-size: 200% 100%; animation: sk 1.4s infinite; }
 @keyframes sk { to { background-position: -200% 0; } }
 footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

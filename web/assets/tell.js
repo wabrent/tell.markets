@@ -10,23 +10,23 @@
   const css = `
   .tw { position: relative; }
   .tw-btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.18); backdrop-filter: blur(6px);
-    color: inherit; border-radius: 9999px; padding: 8px 14px; font: 500 13px Inter, system-ui, sans-serif; cursor: pointer; transition: border-color .2s, background .2s; white-space: nowrap; }
+    color: inherit; border-radius: 2px; padding: 8px 14px; font: 500 13px Inter, system-ui, sans-serif; cursor: pointer; transition: border-color .2s, background .2s; white-space: nowrap; }
   .tw-btn:hover { border-color: #fff; background: rgba(255,255,255,.06); }
   .tw-dot { width: 7px; height: 7px; border-radius: 50%; background: #9a958d; }
   .tw-dot.on { background: #4fb27a; box-shadow: 0 0 10px #4fb27a; }
-  .tw-menu { position: absolute; right: 0; top: calc(100% + 8px); width: 260px; padding: 14px; border-radius: 14px; z-index: 50;
+  .tw-menu { position: absolute; right: 0; top: calc(100% + 8px); width: 260px; padding: 14px; border-radius: 3px; z-index: 50;
     background: rgba(24,8,10,.96); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(12px); color: #ece9e2; font: 13px/1.5 Inter, system-ui, sans-serif;
     opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .2s, transform .25s cubic-bezier(.2,.7,.2,1); box-shadow: 0 20px 50px -20px #000; }
   .tw.open .tw-menu { opacity: 1; transform: none; pointer-events: auto; }
   .tw-menu b { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 24px; display: block; }
   .tw-menu small { color: #9a958d; display: block; margin-top: 4px; }
-  .tw-menu button { margin-top: 12px; width: 100%; border: 1px solid rgba(255,255,255,.2); background: none; color: inherit; border-radius: 9999px; padding: 7px; cursor: pointer; font: inherit; }
+  .tw-menu button { margin-top: 12px; width: 100%; border: 1px solid rgba(255,255,255,.2); background: none; color: inherit; border-radius: 2px; padding: 7px; cursor: pointer; font: inherit; }
   .tw-menu button:hover { border-color: #fff; }
   .tw-err { color: #ffb4b6; margin-top: 8px; font-size: 12px; }
   /* dark, thin scrollbars everywhere instead of the browser's white ones */
   * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
   ::-webkit-scrollbar { width: 8px; height: 6px; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 6px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }`;
   const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
 

@@ -42,12 +42,12 @@ button { font: inherit; color: inherit; }
 .brand { font-family: var(--serif); font-size: 20px; letter-spacing: .32em; display: inline-flex; align-items: center; gap: 10px; color: #fff; }
 .logo { width: 32px; height: 32px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,0.3); transition: transform .4s cubic-bezier(.2,.7,.2,1); }
 .brand:hover .logo { transform: rotate(-8deg) scale(1.06); }
-.brand-tag { border: 1px solid rgba(255,255,255,0.3); border-radius: 9999px; padding: 2px 8px; color: rgba(255,255,255,0.8); }
+.brand-tag { border: 1px solid rgba(255,255,255,0.3); border-radius: 2px; padding: 2px 8px; color: rgba(255,255,255,0.8); }
 .search { flex: 1; display: flex; gap: 8px; max-width: 640px; margin: 0 auto; }
-.search input { flex: 1; min-width: 0; background: rgba(10,4,5,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 9999px; padding: 9px 16px; font: 13px var(--mono); outline: none; transition: border-color .2s; backdrop-filter: blur(6px); }
+.search input { flex: 1; min-width: 0; background: rgba(10,4,5,0.45); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 2px; padding: 9px 16px; font: 13px var(--mono); outline: none; transition: border-color .2s; backdrop-filter: blur(6px); }
 .search input::placeholder { color: rgba(255,255,255,0.5); }
 .search input:focus { border-color: rgba(255,255,255,0.6); }
-.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 9999px; padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border: 0; white-space: nowrap; transition: background .2s, transform .15s; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 2px; padding: 9px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border: 0; white-space: nowrap; transition: background .2s, transform .15s; }
 .btn-cream { background: var(--text); color: var(--ink); }
 .btn-cream:hover { background: #fff; }
 .btn-line { background: none; border: 1px solid var(--line-2); }
@@ -77,16 +77,16 @@ button { font: inherit; color: inherit; }
 .score b { font-family: var(--serif); font-weight: 400; font-size: 72px; line-height: .85; }
 .score span { color: var(--dim); font-size: 12px; }
 .t-ok { --c: var(--green); } .t-mid { --c: #d8c24a; } .t-warn { --c: var(--amber); } .t-bad { --c: var(--bad); }
-.meter { margin-top: 14px; height: 3px; background: var(--line); border-radius: 9999px; overflow: hidden; }
-.meter i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 9999px; transition: width 1s cubic-bezier(.2,.7,.2,1); }
-.risk-tag { display: inline-block; margin-top: 12px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 9999px; padding: 2px 10px; }
+.meter { margin-top: 14px; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 2px; transition: width 1s cubic-bezier(.2,.7,.2,1); }
+.risk-tag { display: inline-block; margin-top: 12px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 2px; padding: 2px 10px; }
 .verdict { margin-top: 18px; font-family: var(--serif); font-size: 20px; line-height: 1.2; }
 .verdict .label { display: block; margin-bottom: 6px; }
 .meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px; }
-.badge { font-family: var(--mono); font-size: 10.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 9999px; padding: 2px 8px; }
+.badge { font-family: var(--mono); font-size: 10.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 2px; padding: 2px 8px; }
 
 .groups { margin-top: 22px; display: grid; gap: 8px; }
-.group { border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.015); }
+.group { border: 1px solid rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.015); }
 .group summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .group summary::-webkit-details-marker { display: none; }
 .group summary .dots { display: flex; gap: 4px; }
@@ -97,7 +97,7 @@ button { font: inherit; color: inherit; }
 .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 7px; }
 .ok { background: var(--green); } .warn { background: var(--amber); } .bad { background: var(--bad); } .info { background: var(--dim); }
 .side-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
-.side-links a { border: 1px solid var(--line-2); border-radius: 9999px; padding: 6px 12px; font-size: 12px; }
+.side-links a { border: 1px solid var(--line-2); border-radius: 2px; padding: 6px 12px; font-size: 12px; }
 .side-links a:hover { border-color: var(--text); }
 .disclaimer { margin-top: 20px; font-size: 11.5px; color: var(--dim); }
 
@@ -120,13 +120,13 @@ button { font: inherit; color: inherit; }
 .hud-tl h1 { font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1; margin-top: 6px; }
 .hud-tl .sub { color: var(--muted); font-size: 12px; margin-top: 6px; font-family: var(--mono); }
 .hud-tr { top: 16px; right: 16px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; }
-.chip { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); border-radius: 9999px; padding: 5px 10px; background: var(--panel); backdrop-filter: blur(6px); cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; transition: color .2s, border-color .2s; }
+.chip { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--line-2); border-radius: 2px; padding: 5px 10px; background: var(--panel); backdrop-filter: blur(6px); cursor: pointer; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; transition: color .2s, border-color .2s; }
 .chip i { width: 7px; height: 7px; border-radius: 50%; }
 .chip.on { color: var(--text); border-color: var(--muted); }
 .chip:hover { color: var(--text); }
 
 /* ---------- Key ---------- */
-.legend { position: absolute; left: 16px; bottom: 92px; width: 212px; z-index: 3; border-radius: 16px; padding: 6px;
+.legend { position: absolute; left: 16px; bottom: 92px; width: 212px; z-index: 3; border-radius: 3px; padding: 6px;
   background: linear-gradient(160deg, rgba(40,12,15,0.72), rgba(14,6,8,0.78)); backdrop-filter: blur(14px) saturate(140%);
   box-shadow: 0 20px 50px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06); }
 .legend::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
@@ -139,7 +139,7 @@ button { font: inherit; color: inherit; }
 .legend.closed .lg-chev { transform: rotate(-90deg); }
 .lg-body { display: grid; gap: 1px; overflow: hidden; max-height: 420px; transition: max-height .45s cubic-bezier(.2,.7,.2,1), opacity .3s; }
 .legend.closed .lg-body { max-height: 0; opacity: 0; }
-.lg-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 9px; background: none; cursor: pointer;
+.lg-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 3px; background: none; cursor: pointer;
   font-size: 12px; color: var(--muted); text-align: left; transition: background .2s, color .2s, transform .25s cubic-bezier(.2,.7,.2,1);
   opacity: 0; transform: translateX(-8px); }
 .legend.ready .lg-item { opacity: 1; transform: none; transition-delay: calc(var(--i) * 45ms); }
@@ -154,7 +154,7 @@ button { font: inherit; color: inherit; }
 
 /* swatches */
 .sw { position: relative; width: 10px; height: 10px; border-radius: 50%; flex: none;
-  background: radial-gradient(circle at 32% 30%, #fff 0 12%, var(--c) 40%, color-mix(in srgb, var(--c) 45%, #000) 100%);
+  background: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 22%, transparent);
   animation: breathe 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * -0.4s); }
 @keyframes breathe { 50% { transform: scale(.82); } }
 .sw-glow { box-shadow: 0 0 10px 1px color-mix(in srgb, var(--c) 70%, transparent); }
@@ -172,8 +172,8 @@ button { font: inherit; color: inherit; }
 @keyframes flow { to { background-position: 16px 0; } }
 @media (max-width: 700px) { .legend { bottom: 84px; width: 180px; } }
 
-.replay { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.14); border-radius: 14px; padding: 10px 14px; }
-.play { width: 38px; height: 38px; border-radius: 50%; background: var(--text); color: var(--ink); border: 0; cursor: pointer; display: grid; place-items: center; flex: none; transition: transform .15s; }
+.replay { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px; background: var(--panel); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.14); border-radius: 3px; padding: 10px 14px; }
+.play { width: 38px; height: 38px; border-radius: 2px; background: var(--text); color: var(--ink); border: 0; cursor: pointer; display: grid; place-items: center; flex: none; transition: transform .15s; }
 .play:hover { transform: scale(1.06); }
 .play svg { width: 14px; height: 14px; }
 .timeline { flex: 1; display: grid; gap: 6px; min-width: 0; }
@@ -183,16 +183,16 @@ button { font: inherit; color: inherit; }
   background: var(--c); box-shadow: 0 0 0 2px rgba(11,11,12,.9), 0 0 10px var(--c); transform: scale(0); animation: mark-in .5s cubic-bezier(.2,1.6,.4,1) forwards; animation-delay: var(--d); }
 .mark:hover { transform: scale(1.4) !important; }
 @keyframes mark-in { to { transform: scale(1); } }
-.mark-tip { position: absolute; bottom: 64px; transform: translateX(-50%); white-space: nowrap; pointer-events: none; font-size: 12px; background: rgba(26,8,10,.96); border: 1px solid rgba(255,255,255,.16); border-radius: 8px; padding: 6px 10px; opacity: 0; transition: opacity .15s; z-index: 7; }
+.mark-tip { position: absolute; bottom: 64px; transform: translateX(-50%); white-space: nowrap; pointer-events: none; font-size: 12px; background: rgba(26,8,10,.96); border: 1px solid rgba(255,255,255,.16); border-radius: 3px; padding: 6px 10px; opacity: 0; transition: opacity .15s; z-index: 7; }
 .mark-tip.show { opacity: 1; }
 .mark-tip b { font-family: var(--mono); font-weight: 400; font-size: 10px; color: var(--muted); margin-right: 6px; }
-.find input { margin-top: 10px; width: 220px; background: var(--panel); border: 1px solid rgba(255,255,255,0.14); color: var(--text); border-radius: 9999px; padding: 6px 12px; font: 11.5px var(--mono); outline: none; backdrop-filter: blur(6px); transition: border-color .2s, width .3s; }
+.find input { margin-top: 10px; width: 220px; background: var(--panel); border: 1px solid rgba(255,255,255,0.14); color: var(--text); border-radius: 2px; padding: 6px 12px; font: 11.5px var(--mono); outline: none; backdrop-filter: blur(6px); transition: border-color .2s, width .3s; }
 .find input:focus { border-color: rgba(255,255,255,0.5); width: 260px; }
 .find.miss input { border-color: var(--bad); animation: shake .3s; }
 @keyframes shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .spark-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--dim); font-size: 11.5px; }
 .side-actions { display: flex; gap: 6px; margin-top: 8px; }
-.side-actions button { border: 1px solid var(--line-2); background: none; border-radius: 9999px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+.side-actions button { border: 1px solid var(--line-2); background: none; border-radius: 2px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
 .side-actions button:hover { border-color: var(--text); }
 .side-actions button.on { color: var(--amber); border-color: rgba(227,165,64,.5); }
 .top-wallet { margin-left: 4px; }
@@ -206,32 +206,32 @@ input[type=range]::-moz-range-progress { height: 3px; background: var(--bad); }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--text); margin-top: -5px; box-shadow: 0 0 0 4px rgba(255,90,95,.25); }
 input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; border-radius: 50%; background: var(--text); }
 .speed { display: flex; gap: 4px; }
-.speed button { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line-2); background: none; border-radius: 9999px; padding: 4px 8px; cursor: pointer; color: var(--muted); }
+.speed button { font-family: var(--mono); font-size: 10.5px; border: 1px solid var(--line-2); background: none; border-radius: 2px; padding: 4px 8px; cursor: pointer; color: var(--muted); }
 .speed button.on { color: var(--ink); background: var(--text); border-color: var(--text); }
 @media (max-width: 560px) { .speed { display: none; } }
 
-.tip { position: absolute; pointer-events: none; background: rgba(26,8,10,.95); border: 1px solid rgba(255,255,255,0.16); border-radius: 10px; padding: 10px 12px; font-size: 12px; min-width: 180px; transform: translate(14px, 14px); opacity: 0; transition: opacity .15s; z-index: 5; }
+.tip { position: absolute; pointer-events: none; background: rgba(26,8,10,.95); border: 1px solid rgba(255,255,255,0.16); border-radius: 3px; padding: 10px 12px; font-size: 12px; min-width: 180px; transform: translate(14px, 14px); opacity: 0; transition: opacity .15s; z-index: 5; }
 .tip.show { opacity: 1; }
 .tip b { display: block; font-weight: 500; font-size: 13px; }
 .tip .mono { font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
 .tip .kv { display: flex; justify-content: space-between; gap: 16px; margin-top: 4px; color: var(--muted); }
 .tip .kv span:last-child { color: var(--text); font-family: var(--mono); font-size: 11px; }
 
-.panel { position: absolute; top: 108px; right: 16px; width: 300px; max-height: calc(100% - 210px); overflow-y: auto; background: rgba(24,8,10,.95); backdrop-filter: blur(10px); border: 1px solid var(--line-2); border-radius: 14px; padding: 18px; transform: translateX(calc(100% + 32px)); transition: transform .45s cubic-bezier(.2,.7,.2,1); z-index: 6; }
+.panel { position: absolute; top: 108px; right: 16px; width: 300px; max-height: calc(100% - 210px); overflow-y: auto; background: rgba(24,8,10,.95); backdrop-filter: blur(10px); border: 1px solid var(--line-2); border-radius: 3px; padding: 18px; transform: translateX(calc(100% + 32px)); transition: transform .45s cubic-bezier(.2,.7,.2,1); z-index: 6; }
 .panel.open { transform: none; }
-.panel .close { position: absolute; top: 12px; right: 12px; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line-2); background: none; cursor: pointer; color: var(--muted); }
+.panel .close { position: absolute; top: 12px; right: 12px; width: 26px; height: 26px; border-radius: 2px; border: 1px solid var(--line-2); background: none; cursor: pointer; color: var(--muted); }
 .panel h3 { font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.05; margin-top: 8px; padding-right: 30px; }
 .panel .addr { font-family: var(--mono); font-size: 11px; color: var(--dim); word-break: break-all; margin-top: 6px; cursor: pointer; }
-.panel .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 14px; }
+.panel .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; margin-top: 14px; }
 .panel .stats div { background: #1c0a0c; padding: 10px 12px; }
 .panel .stats b { display: block; font-family: var(--serif); font-weight: 400; font-size: 24px; }
 .panel .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.panel .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; border-radius: 9999px; padding: 2px 8px; border: 1px solid; }
+.panel .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; border-radius: 2px; padding: 2px 8px; border: 1px solid; }
 .panel h4 { margin-top: 18px; }
 .panel .cp { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; cursor: pointer; }
 .panel .cp:hover { color: #fff; }
 .panel .cp span:last-child { font-family: var(--mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
-.panel .ext { display: inline-block; margin-top: 16px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 9999px; padding: 6px 12px; }
+.panel .ext { display: inline-block; margin-top: 16px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 2px; padding: 6px 12px; }
 
 /* loading + empty overlays */
 .overlay { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transition: opacity .5s; z-index: 4; }
@@ -327,13 +327,13 @@ input[type=range]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bord
         <span class="label">Key</span><span class="lg-hint">hover to highlight</span><span class="lg-chev">⌄</span>
       </button>
       <div class="lg-body">
-        <button class="lg-item" data-k="mint" style="--c:#ece9e2"><i class="sw"></i><span>Mint</span><b data-n="mint">—</b></button>
-        <button class="lg-item" data-k="pool" style="--c:#d6e4f6"><i class="sw sw-glow"></i><span>Pool / DEX</span><b data-n="pool">—</b></button>
-        <button class="lg-item" data-k="contract" style="--c:#5f86a6"><i class="sw"></i><span>Contract</span><b data-n="contract">—</b></button>
-        <button class="lg-item" data-k="deployer" style="--c:#ff5a5f"><i class="sw sw-ring"></i><span>Deployer</span><b data-n="deployer">—</b></button>
-        <button class="lg-item" data-k="wallet" style="--c:#9a958d"><i class="sw"></i><span>Wallet</span><b data-n="wallet">—</b></button>
+        <button class="lg-item" data-k="mint" style="--c:#efe9df"><i class="sw"></i><span>Mint</span><b data-n="mint">—</b></button>
+        <button class="lg-item" data-k="pool" style="--c:#f4d9d5"><i class="sw sw-glow"></i><span>Pool / DEX</span><b data-n="pool">—</b></button>
+        <button class="lg-item" data-k="contract" style="--c:#c9787c"><i class="sw"></i><span>Contract</span><b data-n="contract">—</b></button>
+        <button class="lg-item" data-k="deployer" style="--c:#ff4d55"><i class="sw sw-ring"></i><span>Deployer</span><b data-n="deployer">—</b></button>
+        <button class="lg-item" data-k="wallet" style="--c:#b8aea4"><i class="sw"></i><span>Wallet</span><b data-n="wallet">—</b></button>
         <button class="lg-item" data-k="cluster" style="--c:#e3a540"><i class="sw sw-orbit"></i><span>Linked</span><b data-n="cluster">—</b></button>
-        <button class="lg-item" data-k="sniper" style="--c:#9d8cff"><i class="sw sw-blink"></i><span>Sniper</span><b data-n="sniper">—</b></button>
+        <button class="lg-item" data-k="sniper" style="--c:#a08cff"><i class="sw sw-blink"></i><span>Sniper</span><b data-n="sniper">—</b></button>
         <div class="lg-sep"></div>
         <button class="lg-item" data-f="buy" style="--c:#4fb27a"><i class="ln"></i><span>Buys</span><b data-n="buy">—</b></button>
         <button class="lg-item" data-f="sell" style="--c:#ff5a5f"><i class="ln ln-rev"></i><span>Sells</span><b data-n="sell">—</b></button>
@@ -368,9 +368,10 @@ const tone = v => v >= 80 ? 'bad' : v >= 60 ? 'warn' : v >= 30 ? 'mid' : 'ok';
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SAMPLE = '0x45970840b4fcf5B97a258B3c623e3EEd48581bA3';
 
+// one palette with the site: bone, rose and crimson; amber and violet only for the warnings
 const COLORS = {
-  mint: '#ece9e2', burn: '#5f5b55', pool: '#d6e4f6', contract: '#5f86a6',
-  deployer: '#ff5a5f', wallet: '#9a958d', others: '#3a3836', cluster: '#e3a540', sniper: '#9d8cff',
+  mint: '#efe9df', burn: '#6b5f5a', pool: '#f4d9d5', contract: '#c9787c',
+  deployer: '#ff4d55', wallet: '#b8aea4', others: '#3a3836', cluster: '#e3a540', sniper: '#a08cff',
 };
 const nodeColor = n => n.kind === 'wallet' && n.cluster ? COLORS.cluster : n.kind === 'wallet' && n.sniper ? COLORS.sniper : COLORS[n.kind];
 
@@ -559,6 +560,13 @@ function startMap(r) {
     if (n.kind === 'mint') { n.x = -260; n.y = 0; }
     else if (n.kind === 'pool') { n.x = 0; n.y = 0; }
     else { n.x = Math.cos(a) * 240; n.y = Math.sin(a) * 240; }
+  });
+
+  // entrance: market and landmarks first, then the crowd ripples in
+  const t0 = performance.now() + 150;
+  nodes.forEach(n => {
+    n.vis = 0; n.grow = 1;
+    n.born = t0 + (n.kind === 'pool' || n.kind === 'mint' ? 0 : n.kind === 'wallet' ? 350 + Math.random() * 900 : 120 + Math.random() * 300);
   });
 
   if (sim) sim.stop();
@@ -841,6 +849,8 @@ function draw(now, dt) {
   ctx.save();
   ctx.translate(transform.x, transform.y);
   ctx.scale(transform.k, transform.k);
+  const k = transform.k, sk = Math.sqrt(k);
+  const ease = Math.min(1, dt / 140); // how far animated values move toward their target this frame
 
   const focus = selected || hover;
   const linked = focus ? new Set(G.links.filter(l => l.source === focus || l.target === focus).flatMap(l => [l.source, l.target])) : null;
@@ -850,88 +860,162 @@ function draw(now, dt) {
     || (keyFocus?.f && n.kind !== 'pool' && n.kind !== 'contract' && !G.links.some(l => (l.source === n || l.target === n) && flowOf(l.source, l.target) === keyFocus.f));
   const maxV = Math.log10(d3.max(G.links, l => l.v) + 1) || 1;
 
-  // edges
+  // every node eases toward its target: born (scale in), dimmed (fade), focused (grow)
+  for (const n of G.nodes) {
+    const age = (now - (n.born ?? 0)) / 650;
+    n.pop = calm ? 1 : age <= 0 ? 0 : age >= 1 ? 1 : backOut(age);
+    const target = dimmed(n) ? 0.13 : 1;
+    n.vis = calm ? target : (n.vis ?? 0) + (target - (n.vis ?? 0)) * ease;
+    const g = n === focus ? 1.22 : 1;
+    n.grow = calm ? g : (n.grow ?? 1) + (g - (n.grow ?? 1)) * ease;
+  }
+
+  // range rings around the market: an instrument, not a screensaver
+  const pool = G.nodes.find(n => n.kind === 'pool') || G.nodes.find(n => n.kind === 'contract');
+  if (pool) {
+    ctx.lineWidth = 1 / k;
+    for (let i = 1; i <= 4; i++) {
+      ctx.strokeStyle = `rgba(239,233,223,${0.11 - i * 0.018})`;
+      ctx.setLineDash(i % 2 ? [] : [2 / k, 6 / k]);
+      ctx.beginPath(); ctx.arc(pool.x, pool.y, i * 150, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  // edges: a thin gradient from sender to receiver, drawn additively so busy routes glow
+  ctx.globalCompositeOperation = 'lighter';
   for (const l of G.links) {
     const a = l.source, b = l.target;
     if (!visible(a) || !visible(b)) continue;
+    const grown = Math.min(a.pop, b.pop);
+    if (grown <= 0) continue;
     const on = focus && (a === focus || b === focus);
-    const w = 0.4 + 2.6 * (Math.log10(l.v + 1) / maxV);
-    const flow = keyFocus?.f ? flowOf(a, b) : null;
+    const s = Math.log10(l.v + 1) / maxV;
+    const flow = flowOf(a, b);
     const keyOn = keyFocus && ((keyFocus.k && (inKey(a) || inKey(b))) || (keyFocus.f && flow === keyFocus.f));
-    ctx.strokeStyle = on ? 'rgba(236,233,226,0.55)'
-      : focus ? 'rgba(255,255,255,0.03)'
-      : keyFocus ? (keyOn ? (keyFocus.f === 'buy' ? 'rgba(79,178,122,0.6)' : keyFocus.f === 'sell' ? 'rgba(255,90,95,0.6)' : 'rgba(236,233,226,0.45)') : 'rgba(255,255,255,0.025)')
-      : `rgba(214,228,246,${0.05 + 0.18 * (Math.log10(l.v + 1) / maxV)})`;
-    ctx.lineWidth = w / Math.sqrt(transform.k);
-    const [cx, cy] = curve(a, b, 0.12);
+    let alpha = on ? 0.75 : focus ? 0.025 : keyFocus ? (keyOn ? 0.6 : 0.02) : 0.1 + 0.32 * s;
+    alpha *= grown;
+    const ca = keyFocus?.f && keyOn ? (flow === 'buy' ? '#4fb27a' : '#ff5a5f') : nodeColor(a);
+    const cb = keyFocus?.f && keyOn ? ca : nodeColor(b);
+    const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+    grad.addColorStop(0, rgba(ca, alpha)); grad.addColorStop(1, rgba(cb, alpha * 0.6));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = (0.35 + 2.2 * s) / sk * (on ? 1.6 : 1);
+    const [cx, cy] = curve(a, b, 0.14);
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(cx, cy, b.x, b.y); ctx.stroke();
   }
 
-  // particles
+  // particles: comets with a fading tail along the curve
+  ctx.lineCap = 'round';
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.t += p.speed * dt / 16;
     if (p.t >= 1) { particles.splice(i, 1); continue; }
-    const [cx, cy] = curve(p.a, p.b, 0.12 + p.bend * 0.2);
-    const t = p.t, u = 1 - t;
-    const x = u * u * p.a.x + 2 * u * t * cx + t * t * p.b.x;
-    const y = u * u * p.a.y + 2 * u * t * cy + t * t * p.b.y;
+    const [cx, cy] = curve(p.a, p.b, 0.14 + p.bend * 0.2);
+    const at = t => { const u = 1 - t; return [u * u * p.a.x + 2 * u * t * cx + t * t * p.b.x, u * u * p.a.y + 2 * u * t * cy + t * t * p.b.y]; };
+    const [x, y] = at(p.t), [tx, ty] = at(Math.max(0, p.t - 0.06));
     const faded = (focus && p.a !== focus && p.b !== focus) || (keyFocus?.f && p.flow !== keyFocus.f) || (keyFocus?.k && !inKey(p.a) && !inKey(p.b));
-    ctx.globalAlpha = faded ? 0.08 : Math.sin(Math.PI * t) * 0.95;
-    ctx.fillStyle = p.color;
-    ctx.shadowColor = p.color; ctx.shadowBlur = faded ? 0 : 8;
-    ctx.beginPath(); ctx.arc(x, y, p.size / Math.sqrt(transform.k), 0, Math.PI * 2); ctx.fill();
+    const a = faded ? 0.06 : Math.sin(Math.PI * p.t) * 0.95;
+    const tail = ctx.createLinearGradient(tx, ty, x, y);
+    tail.addColorStop(0, rgba(p.color, 0)); tail.addColorStop(1, rgba(p.color, a));
+    ctx.strokeStyle = tail; ctx.lineWidth = p.size * 1.3 / sk;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(x, y); ctx.stroke();
+    ctx.fillStyle = rgba(p.color, a);
+    ctx.beginPath(); ctx.arc(x, y, p.size * 0.9 / sk, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 
-  // nodes
+  // soft halos under the important nodes
+  for (const n of G.nodes) {
+    if (!visible(n) || n.kind === 'wallet' || n.kind === 'others' || n.pop <= 0) continue;
+    const r = radius(n, Math.max(replayBal(n), 0)) * n.pop * n.grow;
+    const halo = ctx.createRadialGradient(n.x, n.y, r * 0.6, n.x, n.y, r * (n.kind === 'pool' ? 3.4 : 2.6));
+    halo.addColorStop(0, rgba(nodeColor(n), 0.28 * n.vis)); halo.addColorStop(1, rgba(nodeColor(n), 0));
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(n.x, n.y, r * (n.kind === 'pool' ? 3.4 : 2.6), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // nodes: flat discs with rings, small first so big ones sit on top
   const sorted = G.nodes.filter(visible).sort((a, b) => radius(a) - radius(b));
   for (const n of sorted) {
+    if (n.pop <= 0) continue;
     const bal = Math.max(replayBal(n), 0);
-    const r = radius(n, bal);
+    const r = radius(n, bal) * n.pop * n.grow;
     const c = nodeColor(n);
-    const dim = dimmed(n);
-    ctx.globalAlpha = dim ? 0.15 : 1;
+    ctx.globalAlpha = n.vis;
 
-    // pulse when tokens land
+    // a ripple when tokens land
     const hit = flashes.get(n);
-    if (hit && now - hit < 700) {
-      const k = (now - hit) / 700;
-      ctx.strokeStyle = c; ctx.lineWidth = 1.5 / transform.k; ctx.globalAlpha = (dim ? 0.1 : 0.7) * (1 - k);
-      ctx.beginPath(); ctx.arc(n.x, n.y, r + 4 + k * 16, 0, Math.PI * 2); ctx.stroke();
-      ctx.globalAlpha = dim ? 0.15 : 1;
+    if (hit && now - hit < 900) {
+      const q = (now - hit) / 900;
+      ctx.strokeStyle = rgba(c, 0.8 * (1 - q)); ctx.lineWidth = 1.4 / k;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 3 + q * 22, 0, Math.PI * 2); ctx.stroke();
     }
 
     if (n.kind === 'others') {
-      ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      ctx.setLineDash([3, 4]); ctx.lineWidth = 1 / transform.k;
+      ctx.fillStyle = 'rgba(239,233,223,0.025)'; ctx.strokeStyle = 'rgba(239,233,223,0.28)';
+      ctx.setLineDash([2 / k, 5 / k]); ctx.lineWidth = 1 / k;
       ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
     } else {
-      const g = ctx.createRadialGradient(n.x - r * 0.35, n.y - r * 0.35, r * 0.1, n.x, n.y, r);
-      g.addColorStop(0, '#ffffff'); g.addColorStop(0.18, c); g.addColorStop(1, shade(c));
-      ctx.fillStyle = g;
-      if (!dim && (n.kind === 'deployer' || n.kind === 'pool')) { ctx.shadowColor = c; ctx.shadowBlur = 18; }
+      ctx.fillStyle = n.kind === 'wallet' ? rgba(c, 0.92) : c;
       ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
-      if (n.cluster && !dim) { ctx.strokeStyle = COLORS.cluster; ctx.lineWidth = 1.2 / transform.k; ctx.beginPath(); ctx.arc(n.x, n.y, r + 3, 0, Math.PI * 2); ctx.stroke(); }
+      // inner shade for depth without the plastic highlight
+      if (r > 6) {
+        const inner = ctx.createRadialGradient(n.x, n.y - r * 0.4, 0, n.x, n.y, r);
+        inner.addColorStop(0, 'rgba(255,255,255,0.18)'); inner.addColorStop(1, 'rgba(0,0,0,0.28)');
+        ctx.fillStyle = inner; ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill();
+      }
+      if (n.kind !== 'wallet') {
+        ctx.strokeStyle = rgba(c, 0.55); ctx.lineWidth = 1 / k;
+        ctx.beginPath(); ctx.arc(n.x, n.y, r + 3 / sk, 0, Math.PI * 2); ctx.stroke();
+      }
+      if (n.kind === 'pool') { // a slow dashed orbit marks the market
+        ctx.save(); ctx.translate(n.x, n.y); ctx.rotate(now / 9000);
+        ctx.strokeStyle = rgba(c, 0.4); ctx.setLineDash([4 / k, 7 / k]); ctx.lineWidth = 1 / k;
+        ctx.beginPath(); ctx.arc(0, 0, r + 11 / sk, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); ctx.setLineDash([]);
+      }
+      if (n.kind === 'deployer' && !calm) { // the deployer breathes: watch this one
+        const q = (now % 2200) / 2200;
+        ctx.strokeStyle = rgba(c, 0.6 * (1 - q)); ctx.lineWidth = 1.2 / k;
+        ctx.beginPath(); ctx.arc(n.x, n.y, r + 4 + q * 18, 0, Math.PI * 2); ctx.stroke();
+      }
+      if (n.cluster) { ctx.strokeStyle = rgba(COLORS.cluster, 0.9); ctx.lineWidth = 1.2 / k; ctx.beginPath(); ctx.arc(n.x, n.y, r + 2.5 / sk, 0, Math.PI * 2); ctx.stroke(); }
     }
     if (n === focus) {
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5 / transform.k;
-      ctx.beginPath(); ctx.arc(n.x, n.y, r + 5 + Math.sin(now / 200) * 1.5, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    // labels for the landmarks, the focus and its neighbours
-    const show = n === focus || (linked && linked.has(n)) || (filters.labels && (n.kind !== 'wallet' || r > 12));
-    if (show && !dim) {
-      ctx.globalAlpha = 1;
-      ctx.font = `${n.kind === 'wallet' ? 400 : 500} ${11 / Math.sqrt(transform.k)}px Inter, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillStyle = n.kind === 'wallet' ? '#9a958d' : '#ece9e2';
-      ctx.fillText(n.label, n.x, n.y + r + 14 / Math.sqrt(transform.k));
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.4 / k;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 6 / sk + Math.sin(now / 220) * 1.2, 0, Math.PI * 2); ctx.stroke();
     }
   }
+
+  // labels: small caps in a dark tab, only where they help
   ctx.globalAlpha = 1;
+  for (const n of sorted) {
+    if (n.pop < 0.9 || n.vis < 0.5) continue;
+    const r = radius(n, Math.max(replayBal(n), 0)) * n.grow;
+    const show = n === focus || (linked && linked.has(n)) || (filters.labels && (n.kind !== 'wallet' || r > 12));
+    if (!show) continue;
+    const fs = 9.5 / sk;
+    ctx.font = `500 ${fs}px 'JetBrains Mono', monospace`;
+    const text = n.label.toUpperCase();
+    const tw = ctx.measureText(text).width + text.length * fs * 0.08;
+    const lx = n.x, ly = n.y + r + 9 / sk + fs;
+    ctx.fillStyle = 'rgba(14,4,6,0.72)';
+    roundRect(lx - tw / 2 - 5 / sk, ly - fs - 2 / sk, tw + 10 / sk, fs + 7 / sk, 3 / sk);
+    ctx.fillStyle = n.kind === 'wallet' ? '#b8aea4' : '#efe9df';
+    ctx.textAlign = 'center';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${fs * 0.08}px`;
+    ctx.fillText(text, lx, ly);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  }
   ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); ctx.fill(); }
+function backOut(t) { const s = 1.6; t -= 1; return t * t * ((s + 1) * t + s) + 1; }
+const rgbaCache = {};
+function rgba(hex, a) {
+  const c = rgbaCache[hex] || (rgbaCache[hex] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)));
+  return `rgba(${c[0]},${c[1]},${c[2]},${Math.max(0, Math.min(1, a)).toFixed(3)})`;
 }
 
 const shadeCache = {};

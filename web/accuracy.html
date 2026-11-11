@@ -48,17 +48,17 @@ h2 { font-family: var(--serif); font-weight: 400; font-size: 38px; margin: 56px 
 h2:first-child { margin-top: 0; }
 h2 em { font-style: italic; }
 .sub { color: var(--muted); max-width: 720px; margin-bottom: 20px; }
-.chart { border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 18px; }
+.chart { border: 1px solid var(--line); border-radius: 3px; padding: 22px; display: grid; gap: 18px; }
 .bar-row { display: grid; grid-template-columns: 112px 1fr 64px; gap: 14px; align-items: center; }
 @media (max-width: 560px) { .bar-row { grid-template-columns: 84px 1fr 54px; gap: 10px; } }
 .bar-row .who b { display: block; font-weight: 500; text-transform: capitalize; }
 .bar-row .who span { font-family: var(--mono); font-size: 11px; color: var(--dim); }
-.track { height: 22px; border-radius: 6px; background: rgba(255,255,255,.04); overflow: hidden; }
-.fill { height: 100%; width: 0; border-radius: 6px; background: var(--c); transition: width 1.1s cubic-bezier(.2,.7,.2,1); }
+.track { height: 22px; border-radius: 3px; background: rgba(255,255,255,.04); overflow: hidden; }
+.fill { height: 100%; width: 0; border-radius: 3px; background: var(--c); transition: width 1.1s cubic-bezier(.2,.7,.2,1); }
 .val { font-family: var(--serif); font-size: 26px; text-align: right; }
 .t-low { --c: var(--green); } .t-medium { --c: var(--mid); } .t-caution { --c: var(--amber); } .t-high { --c: var(--bad); }
 .chart-note { font-size: 12.5px; color: var(--dim); }
-.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
@@ -67,14 +67,14 @@ tr:last-child td { border-bottom: 0; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 8px; }
 .cols { display: grid; gap: 16px; }
 @media (min-width: 900px) { .cols { grid-template-columns: 1fr 1fr; } }
-.box { border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.box { border: 1px solid var(--line); border-radius: 3px; padding: 22px; }
 .box dl { display: grid; gap: 12px; }
 .box dt { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .box dd { color: #cfcac2; font-size: 14.5px; }
 .good { border-color: rgba(227,165,64,.35); background: linear-gradient(160deg, rgba(227,165,64,.06), transparent 60%); }
 .good ul { padding-left: 18px; display: grid; gap: 10px; color: #cfcac2; font-size: 14.5px; }
-.btn { display: inline-flex; gap: 8px; align-items: center; border-radius: 9999px; padding: 11px 20px; background: var(--text); color: var(--ink); font-weight: 500; margin-top: 18px; }
-.collecting { border: 1px dashed var(--line-2); border-radius: 14px; padding: 28px; color: var(--muted); }
+.btn { display: inline-flex; gap: 8px; align-items: center; border-radius: 2px; padding: 11px 20px; background: var(--text); color: var(--ink); font-weight: 500; margin-top: 18px; }
+.collecting { border: 1px dashed var(--line-2); border-radius: 3px; padding: 28px; color: var(--muted); }
 footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
 </style>
 </head>
