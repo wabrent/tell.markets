@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API & MCP — Tell</title>
+<meta name="description" content="Risk checks for Robinhood Chain tokens from your agent: MCP server, REST API, x402 payments in USDG.">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/assets/tell.js"></script>
+<style>
+:root {
+  --ink: #0b0b0c; --ink-2: #121213; --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+  --text: #ece9e2; --muted: #9a958d; --dim: #5f5b55; --red: #8e0c14; --red-deep: #5c070c;
+  --green: #4fb27a; --amber: #e3a540; --bad: #ff5a5f;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--ink); scroll-behavior: smooth; }
+body { background: var(--ink); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 768px) { .wrap { padding: 0 40px; } }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.band { position: relative; overflow: hidden; padding-bottom: 48px;
+  background: radial-gradient(70% 140% at 85% 0%, rgba(255,40,40,0.22), transparent 60%), linear-gradient(120deg, var(--red-deep), var(--red) 60%, #7a0a12); }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 12px; }
+.brand { font-family: var(--serif); font-size: 22px; letter-spacing: .32em; display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
+.logo { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+.links { display: none; gap: 26px; font-size: 13px; color: rgba(255,255,255,.85); }
+.links a { text-decoration: none; }
+.links a.on { color: #fff; text-decoration: underline; text-underline-offset: 6px; }
+@media (min-width: 900px) { .links { display: flex; } }
+.band h1 { font-family: var(--serif); font-weight: 400; font-size: 52px; line-height: .95; color: #fff; margin-top: 16px; }
+@media (min-width: 768px) { .band h1 { font-size: 80px; } }
+.band h1 em { font-style: italic; }
+.band .label { color: rgba(255,255,255,.75); }
+.band p { color: rgba(255,255,255,.85); max-width: 640px; margin-top: 18px; font-size: 16px; }
+.layout { display: grid; gap: 40px; padding-top: 48px; padding-bottom: 96px; }
+@media (min-width: 1000px) { .layout { grid-template-columns: 200px minmax(0, 1fr); } }
+.layout > main { min-width: 0; }
+.toc { position: sticky; top: 24px; align-self: start; display: none; flex-direction: column; gap: 10px; font-size: 13px; color: var(--muted); }
+.toc a { text-decoration: none; } .toc a:hover { color: var(--text); }
+@media (min-width: 1000px) { .toc { display: flex; } }
+main section { padding: 8px 0 48px; border-bottom: 1px solid var(--line); margin-bottom: 40px; min-width: 0; }
+main section:last-child { border-bottom: 0; }
+h2 { font-family: var(--serif); font-weight: 400; font-size: 40px; line-height: 1; margin: 10px 0 16px; }
+h2 em { font-style: italic; }
+h3 { font-weight: 500; font-size: 16px; margin: 26px 0 8px; }
+p, li { color: #cfcac2; max-width: 780px; }
+ul, ol { padding-left: 20px; display: grid; gap: 6px; margin: 10px 0; }
+code { font-family: var(--mono); font-size: 13px; background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; background: #070707; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 12px 0; color: #e6e1d8; position: relative; }
+pre code { background: none; border: 0; padding: 0; }
+.copy { position: absolute; top: 10px; right: 10px; border: 1px solid var(--line-2); background: var(--ink-2); color: var(--muted); border-radius: 9999px; padding: 3px 10px; font: 11px var(--mono); cursor: pointer; }
+.copy:hover { color: var(--text); border-color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.tbl table { margin: 0; }
+.tbl tr:last-child td { border-bottom: 0; }
+.grid3 { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 16px 0; }
+@media (min-width: 768px) { .grid3 { grid-template-columns: repeat(3, 1fr); } }
+.grid3 > div { background: var(--ink); padding: 20px; }
+.grid3 b { display: block; font-family: var(--serif); font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+.grid3 p { color: var(--muted); font-size: 13.5px; }
+.note { border-left: 2px solid var(--amber); padding: 6px 14px; color: var(--muted); margin: 14px 0; font-size: 14px; }
+.btn { border: 0; border-radius: 9999px; padding: 10px 20px; background: var(--text); color: var(--ink); font-weight: 500; cursor: pointer; font: 500 14px var(--sans); }
+.btn:disabled { opacity: .6; cursor: default; }
+#keybox { margin-top: 14px; }
+#keyout { margin-top: 12px; display: none; }
+footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body>
+<header class="band">
+  <nav>
+    <div class="wrap">
+      <a class="brand" href="/"><img class="logo" src="/assets/logo.webp" alt="" width="34" height="34">TELL</a>
+      <div class="links"><a href="/">Check</a><a href="/launches">Launches</a><a href="/compare">Compare</a><a href="/app">Token map</a><a href="/docs" class="on">API</a><a href="/proof">Proof</a></div>
+      <div data-wallet></div>
+    </div>
+  </nav>
+  <div class="wrap">
+    <span class="label">API · MCP · x402</span>
+    <h1>Let your agent <em>read the tell.</em></h1>
+    <p>One call before every buy. Tell checks a Robinhood Chain token's contract, holders, deployer, website claims and market, and answers with a 0–100 risk score your agent can act on.</p>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <aside class="toc">
+    <a href="#start">Quick start</a>
+    <a href="#mcp">MCP server</a>
+    <a href="#rest">REST API</a>
+    <a href="#response">Response</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#x402">Paying with x402</a>
+    <a href="#keys">API keys</a>
+    <a href="#proof">Proof</a>
+  </aside>
+  <main>
+    <section id="start">
+      <span class="label">01 / Quick start</span>
+      <h2>Thirty seconds to <em>first check.</em></h2>
+      <pre><code>curl "https://tell.markets/api/v1/check?token=0x45C83b37C5BAF4dad26f3845C28295e2DE010962"</code></pre>
+      <p>No key, no sign-up. <code>mode=quick</code> is the default and is free. Ask for <code>mode=full</code> when your agent is about to commit money.</p>
+      <div class="grid3">
+        <div><span class="label">Quick</span><b>Free · ~3s</b><p>Contract powers (mint, blacklist, pause, proxy, owner) and market (liquidity, pool age, sell pressure). From the last full report if it is under an hour old.</p></div>
+        <div><span class="label">Full</span><b>~30s · <span id="price-full">$0.03</span></b><p>Adds holder concentration, clusters, snipers, deployer history, website and "promises vs chain" checks, and the AI verdict.</p></div>
+        <div><span class="label">Scores</span><b>0–100</b><p>0–29 low · 30–59 medium · 60–79 caution · 80–100 high. Critical findings force 80+.</p></div>
+      </div>
+    </section>
+
+    <section id="mcp">
+      <span class="label">02 / MCP</span>
+      <h2>Plug Tell into <em>any agent.</em></h2>
+      <p>Remote MCP server over Streamable HTTP at <code>https://tell.markets/mcp</code>. Stateless, no session needed.</p>
+      <h3>Claude Code</h3>
+      <pre><code>claude mcp add --transport http tell https://tell.markets/mcp</code></pre>
+      <h3>Claude Desktop, Cursor and other clients</h3>
+      <pre><code>{
+  "mcpServers": {
+    "tell": { "type": "http", "url": "https://tell.markets/mcp" }
+  }
+}</code></pre>
+      <p>With an API key (free full checks for $TELL holders), add a header:</p>
+      <pre><code>"tell": { "type": "http", "url": "https://tell.markets/mcp",
+          "headers": { "Authorization": "Bearer tell_…" } }</code></pre>
+      <h3>Tools</h3>
+      <div class="tbl"><table>
+        <tr><th>Tool</th><th>What it does</th></tr>
+        <tr><td><code>check_token</code></td><td>Risk check of one token. <code>token</code>: address or DexScreener link; <code>mode</code>: quick | full.</td></tr>
+        <tr><td><code>compare_tokens</code></td><td>Two tokens side by side; returns which one carries less risk.</td></tr>
+        <tr><td><code>recent_launches</code></td><td>Pons launches of the last 24 hours with scores. <code>limit</code>, <code>max_risk</code>.</td></tr>
+        <tr><td><code>verdict_proof</code></td><td>Recorded verdicts for a token with Merkle proofs against the on-chain roots.</td></tr>
+        <tr><td><code>pricing</code></td><td>What is free and what costs USDG.</td></tr>
+      </table></div>
+    </section>
+
+    <section id="rest">
+      <span class="label">03 / REST</span>
+      <h2>Plain <em>HTTP.</em></h2>
+      <p>Base URL <code>https://tell.markets/api/v1</code>. JSON out, CORS open, 60 requests a minute per caller. Machine-readable spec: <a href="/api/v1/openapi.json"><code>/api/v1/openapi.json</code></a>.</p>
+      <div class="tbl"><table>
+        <tr><th>Endpoint</th><th>Description</th></tr>
+        <tr><td><code>GET /check?token=0x…&amp;mode=quick|full</code></td><td>Risk check. Full mode may answer 402 (see x402).</td></tr>
+        <tr><td><code>GET /compare?a=0x…&amp;b=0x…</code></td><td>Two quick checks and which is lower risk.</td></tr>
+        <tr><td><code>GET /launches?limit=50&amp;maxRisk=100</code></td><td>Last 24h of Pons launches, newest first.</td></tr>
+        <tr><td><code>GET /pricing</code></td><td>Current prices and payment details.</td></tr>
+        <tr><td><code>GET /proof</code> · <code>GET /proof/0x…</code></td><td>Verdict ledger, anchoring txs, x402 revenue · verdicts for one token.</td></tr>
+        <tr><td><code>POST /keys</code></td><td>Create an API key (signed-in wallet only).</td></tr>
+      </table></div>
+    </section>
+
+    <section id="response">
+      <span class="label">04 / Response</span>
+      <h2>What your agent <em>gets back.</em></h2>
+      <pre><code>{
+  "token":   { "address": "0x45C8…0962", "name": "RobinHood", "symbol": "HOOD", "chainId": 4663 },
+  "risk":    { "score": 40, "label": "Medium risk", "level": "medium" },
+  "verdict": "No site to inspect, so the token rests on on-chain data alone. The deployer sold their entire 11.82% bag…",
+  "critical": [],
+  "flags":   [ { "group": "deployer", "severity": "warn", "title": "Deployer sold their whole bag", "risk": 10 } ],
+  "passed":  [ { "group": "contract", "title": "No owner" } ],
+  "market":  { "liquidityUsd": null, "marketCapUsd": null, … },
+  "mode": "full", "complete": true,
+  "checkedAt": "2026-11-10T12:00:00.000Z", "ageSeconds": 42,
+  "links": { "report": "https://tell.markets/t/0x…", "map": "https://tell.markets/app/0x…" }
+}</code></pre>
+      <h3>A sane default rule</h3>
+      <pre><code>if (r.critical.length || r.risk.score >= 80) skip();      // never buy
+else if (r.risk.score >= 60 || !r.complete) askHuman();  // look closer
+else proceed();</code></pre>
+      <p class="note">Tell states facts and a score. It can be wrong and it is not financial advice; your agent decides.</p>
+    </section>
+
+    <section id="pricing">
+      <span class="label">05 / Pricing</span>
+      <h2>Pay per check, <em>in USDG.</em></h2>
+      <div class="tbl"><table id="pricing-table">
+        <tr><th>What</th><th>Price</th><th>Notes</th></tr>
+        <tr><td>Quick check</td><td>Free</td><td>Rate limited.</td></tr>
+        <tr><td>Full check</td><td id="p-full">$0.03 USDG</td><td id="p-free">5 free a day per caller, then x402.</td></tr>
+        <tr><td>Full check with a $TELL holder key</td><td>Free</td><td id="p-hold">API key from a wallet holding $TELL.</td></tr>
+      </table></div>
+      <p id="p-state" class="note" hidden></p>
+    </section>
+
+    <section id="x402">
+      <span class="label">06 / x402</span>
+      <h2>No account. <em>Just pay.</em></h2>
+      <p>Full checks past the free allowance answer <code>402 Payment Required</code> with x402 requirements: scheme <code>exact</code>, network <code>eip155:4663</code>, asset USDG <code>0x5fc5…d168</code> (6 decimals). Your agent signs an EIP-3009 <code>TransferWithAuthorization</code> and retries with the <code>X-PAYMENT</code> header. Tell verifies it, runs the check, submits the transfer on-chain (Tell pays the gas) and returns the result with <code>X-PAYMENT-RESPONSE</code> holding the tx hash. If the check fails, nothing is charged.</p>
+      <pre><code>import { privateKeyToAccount } from 'viem/accounts';
+const account = privateKeyToAccount(process.env.AGENT_KEY);  // holds USDG, needs no ETH
+const url = 'https://tell.markets/api/v1/check?token=0x…&amp;mode=full';
+
+let res = await fetch(url);
+if (res.status === 402) {
+  const { accepts: [req] } = await res.json();
+  const auth = {
+    from: account.address, to: req.payTo, value: req.maxAmountRequired,
+    validAfter: '0', validBefore: String(Math.floor(Date.now() / 1000) + 120),
+    nonce: '0x' + [...crypto.getRandomValues(new Uint8Array(32))].map(b => b.toString(16).padStart(2, '0')).join(''),
+  };
+  const signature = await account.signTypedData({
+    domain: { name: req.extra.name, version: req.extra.version, chainId: 4663, verifyingContract: req.asset },
+    types: { TransferWithAuthorization: [
+      { name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'value', type: 'uint256' },
+      { name: 'validAfter', type: 'uint256' }, { name: 'validBefore', type: 'uint256' }, { name: 'nonce', type: 'bytes32' } ] },
+    primaryType: 'TransferWithAuthorization',
+    message: { ...auth, value: BigInt(auth.value), validAfter: 0n, validBefore: BigInt(auth.validBefore) },
+  });
+  const payment = btoa(JSON.stringify({ x402Version: 1, scheme: 'exact', network: req.network, payload: { signature, authorization: auth } }));
+  res = await fetch(url, { headers: { 'X-PAYMENT': payment } });
+}
+const report = await res.json();</code></pre>
+      <p>Any x402 client library that supports EVM <code>exact</code> works the same way.</p>
+    </section>
+
+    <section id="keys">
+      <span class="label">07 / API keys</span>
+      <h2>Hold $TELL, <em>check for free.</em></h2>
+      <p>Sign in with your wallet (top right), create a key and send it as <code>Authorization: Bearer tell_…</code> to the API or MCP. While the wallet holds enough $TELL, full checks through the key are free. Keys are optional: without one, the free allowance and x402 apply.</p>
+      <div id="keybox">
+        <button class="btn" id="mkkey" disabled>Sign in to create a key</button>
+        <pre id="keyout"></pre>
+      </div>
+    </section>
+
+    <section id="proof">
+      <span class="label">08 / Proof</span>
+      <h2>Scores you can <em>verify.</em></h2>
+      <p>Every finished check becomes a leaf <code>keccak256(abi.encode(token, score, keccak(verdict), keccak(checks), checkedAtMs))</code>. Each hour the leaves are folded into a Merkle root (pairs hashed sorted) and the root is written to Robinhood Chain as the data of a transaction: <code>0x54454c4c</code> ("TELL") followed by the root. <code>/api/v1/proof/0x…</code> returns each verdict with its proof. Ledger, roots, payments and burns: <a href="/proof">tell.markets/proof</a>.</p>
+    </section>
+  </main>
+</div>
+
+<footer><div class="wrap">© 2026 Tell · tell.markets · Not financial advice.</div></footer>
+
+<script>
+document.querySelectorAll('pre').forEach(pre => {
+  if (pre.id === 'keyout') return;
+  const b = document.createElement('button'); b.className = 'copy'; b.textContent = 'Copy';
+  b.onclick = () => { navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? ''); b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1200); };
+  pre.appendChild(b);
+});
+
+fetch('/api/v1/pricing').then(r => r.json()).then(p => {
+  const full = p.full;
+  const price = full.price ? `$${full.price} USDG` : 'Free right now';
+  document.getElementById('p-full').textContent = price;
+  document.getElementById('price-full').textContent = full.price ? `$${full.price}` : 'free';
+  document.getElementById('p-free').textContent = full.price ? `${full.freePerDay} free a day per caller, then x402.` : 'Payments are not switched on yet, so full checks are free.';
+  document.getElementById('p-hold').textContent = full.holders;
+  if (typeof full.payments === 'object') {
+    const s = document.getElementById('p-state');
+    s.hidden = false; s.textContent = `Payments live: ${full.payments.protocol}, ${full.payments.scheme}, ${full.payments.network}, pay to ${full.payments.payTo}.`;
+  }
+}).catch(() => {});
+
+const mk = document.getElementById('mkkey'), out = document.getElementById('keyout');
+document.addEventListener('tell:me', e => {
+  const me = e.detail || {};
+  mk.disabled = !me.address;
+  mk.textContent = me.address ? 'Create API key' : 'Sign in to create a key';
+});
+mk.onclick = async () => {
+  mk.disabled = true;
+  try {
+    const r = await (await fetch('/api/v1/keys', { method: 'POST' })).json();
+    out.style.display = 'block';
+    out.textContent = r.key ? `${r.key}\n\n${r.note}` : (r.error || 'Could not create a key.');
+  } finally { mk.disabled = false; }
+};
+</script>
+</body>
+</html>

@@ -219,6 +219,12 @@ tr:last-child td { border-bottom: 0; }
 .off-r button, .off-r a { border: 1px solid var(--line-2); background: none; color: var(--text); border-radius: 9999px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
 .off-r button:hover, .off-r a:hover { border-color: var(--text); }
 .token-card p { color: var(--muted); font-size: 14px; }
+.agent-grid { display: grid; gap: 16px; }
+@media (min-width: 1000px) { .agent-grid { grid-template-columns: 1fr 1.4fr; align-items: stretch; } }
+.agent-code { border: 1px solid var(--line); border-radius: 12px; padding: 24px; background: linear-gradient(160deg, rgba(255,255,255,0.03), transparent); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.agent-code pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.55; color: var(--text); background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; }
+@media (min-width: 768px) { .agent-card { grid-template-columns: 1fr; } }
+@media (min-width: 1300px) { .agent-card { grid-template-columns: repeat(3, 1fr); } }
 
 details { border-top: 1px solid var(--line); padding: 22px 0; }
 details:last-child { border-bottom: 1px solid var(--line); }
@@ -317,9 +323,10 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
     <div class="nav-links">
       <a href="/launches">Launches <i class="live-dot"></i></a>
       <a href="/compare">Compare</a>
-      <a href="#checks">Checks</a>
+      <a href="#agents">For agents</a>
+      <a href="/docs">API</a>
+      <a href="/proof">Proof</a>
       <a href="#token">$TELL</a>
-      <a href="#faq">FAQ</a>
     </div>
     <div class="nav-right">
       <div data-wallet></div>
@@ -477,19 +484,52 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
   </div>
 </section>
 
+<section id="agents">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="label">05 / For agents</span>
+        <h2>Your bot buys fast.<br><em>Let it read first.</em></h2>
+      </div>
+      <p>Trading agents on Robinhood Chain buy tokens on their own. Tell gives them a risk check before the trade: one MCP call or one HTTP request, paid per check in USDG over x402. No account, no API key needed.</p>
+    </div>
+    <div class="agent-grid">
+      <div class="agent-code">
+        <span class="label">MCP · Claude, Cursor, any agent</span>
+<pre>{
+  "mcpServers": {
+    "tell": { "type": "http", "url": "https://tell.markets/mcp" }
+  }
+}</pre>
+        <span class="label" style="margin-top:18px">REST</span>
+<pre>curl "https://tell.markets/api/v1/check?token=0x…&amp;mode=quick"</pre>
+      </div>
+      <div class="token-card agent-card">
+        <div><span class="label">Quick check</span><b>Free · ~3s</b><p>Contract powers and market. Served from the last full report when it is under an hour old.</p></div>
+        <div><span class="label">Full check</span><b>$0.03 USDG</b><p>Holders, deployer history, website claims and AI review. A few free a day, then x402: the agent signs, Tell settles on-chain.</p></div>
+        <div><span class="label">Proof</span><b>On-chain ledger</b><p>Every verdict is hashed into an hourly Merkle root written to Robinhood Chain. Nobody can edit a score after the fact.</p></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px">
+      <a class="btn btn-cream" href="/docs" style="margin-top:0">Read the docs <span>→</span></a>
+      <a class="btn btn-ghost" href="/proof" style="margin-top:0">See the proof <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
 <section id="token">
   <div class="wrap">
     <div class="sec-head">
       <div>
-        <span class="label">05 / $TELL</span>
-        <h2>Free to use.<br><em>Better to hold.</em></h2>
+        <span class="label">06 / $TELL</span>
+        <h2>Paid by agents.<br><em>Owned by holders.</em></h2>
       </div>
-      <p>Checking a token stays free. $TELL holders get more out of it, and part of the revenue goes back into the token.</p>
+      <p>Checks stay free for people. Agents pay per full check, and that revenue is the token's job: it is public, on-chain, and a share of it buys $TELL back.</p>
     </div>
     <div class="token-card">
-      <div><span class="label">Free</span><b>3 checks a day</b><p>No wallet, no sign-up.</p></div>
-      <div><span class="label">Holders</span><b>Unlimited</b><p>Plus alerts on new launches. Link a wallet with one signature, no transaction.</p></div>
-      <div><span class="label">Revenue</span><b>Buybacks</b><p>A share of paid checks buys $TELL back, from a public address.</p></div>
+      <div><span class="label">Holders</span><b>Free full checks</b><p>Sign in with your wallet, create an API key, and your agents check tokens for free while the wallet holds $TELL.</p></div>
+      <div><span class="label">Revenue</span><b>Buyback &amp; burn</b><p>A share of x402 revenue buys $TELL on the open market and burns it. Every payment and every burn is listed on <a href="/proof" style="text-decoration:underline">/proof</a>.</p></div>
+      <div><span class="label">Alerts</span><b>First look</b><p>Holders get the launch feed and new checks first, in Telegram and on the site.</p></div>
     </div>
     <div class="official" id="official">
       <div class="off-l">
@@ -510,14 +550,16 @@ footer a { text-decoration: underline; text-underline-offset: 3px; }
   <div class="wrap">
     <div class="sec-head">
       <div>
-        <span class="label">06 / FAQ</span>
+        <span class="label">07 / FAQ</span>
         <h2>Before you <em>check.</em></h2>
       </div>
     </div>
     <details><summary>Is this financial advice?</summary><p>No. Tell describes what it finds on chain and on the web. It never tells you to buy or sell, and it can be wrong, so every report shows why it scored the way it did.</p></details>
     <details><summary>How is the score calculated?</summary><p>Each finding adds risk points. Critical findings, like an owner who can mint new tokens or unlocked liquidity, push the score to at least 80 on their own.</p></details>
     <details><summary>Which tokens can I check?</summary><p>Any ERC-20 on Robinhood Chain. Paste the address, or a DexScreener link to its pool.</p></details>
-    <details><summary>Why did a stablecoin get a high score?</summary><p>Stablecoins can mint by design. A list of known assets is on the way so they stop raising false alarms.</p></details>
+    <details><summary>Can my trading bot use Tell?</summary><p>Yes. Connect it to the MCP server at tell.markets/mcp or call /api/v1/check. Quick checks are free; full checks are a few free a day, then paid per check in USDG over x402. See <a href="/docs" style="text-decoration:underline">the docs</a>.</p></details>
+    <details><summary>What are "promises vs the chain" checks?</summary><p>Tell compares what a project's site says with what is on-chain: burns that never happened, an audit that is "done" and "not done" on the same page, buy links to look-alike launchpad domains, dead GitHub and app links.</p></details>
+    <details><summary>Why did a stablecoin get a low score despite owner powers?</summary><p>Stablecoins, WETH and stock tokens keep owner powers by design. Tell recognizes them and doesn't score them like a memecoin.</p></details>
   </div>
 </section>
 

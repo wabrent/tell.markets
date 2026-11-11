@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof — Tell</title>
+<meta name="description" content="Every Tell verdict, hashed and anchored on Robinhood Chain. Plus every x402 payment and every $TELL burn.">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/assets/tell.js"></script>
+<style>
+:root {
+  --ink: #0b0b0c; --ink-2: #121213; --line: rgba(255,255,255,0.08); --line-2: rgba(255,255,255,0.14);
+  --text: #ece9e2; --muted: #9a958d; --dim: #5f5b55; --red: #8e0c14; --red-deep: #5c070c;
+  --green: #4fb27a; --amber: #e3a540; --bad: #ff5a5f;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--ink); }
+body { background: var(--ink); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 768px) { .wrap { padding: 0 40px; } }
+.label { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.band { position: relative; overflow: hidden; padding-bottom: 48px;
+  background: radial-gradient(70% 140% at 85% 0%, rgba(255,40,40,0.22), transparent 60%), linear-gradient(120deg, var(--red-deep), var(--red) 60%, #7a0a12); }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 12px; }
+.brand { font-family: var(--serif); font-size: 22px; letter-spacing: .32em; display: inline-flex; align-items: center; gap: 12px; color: #fff; }
+.logo { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255,255,255,.25); }
+.links { display: none; gap: 26px; font-size: 13px; color: rgba(255,255,255,.85); }
+.links a.on { color: #fff; text-decoration: underline; text-underline-offset: 6px; }
+@media (min-width: 900px) { .links { display: flex; } }
+.band h1 { font-family: var(--serif); font-weight: 400; font-size: 52px; line-height: .95; color: #fff; margin-top: 16px; }
+@media (min-width: 768px) { .band h1 { font-size: 80px; } }
+.band h1 em { font-style: italic; }
+.band .label { color: rgba(255,255,255,.75); }
+.band p { color: rgba(255,255,255,.85); max-width: 640px; margin-top: 18px; font-size: 16px; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 32px; }
+@media (min-width: 768px) { .stats { grid-template-columns: repeat(4, max-content); gap: 48px; } }
+.stats b { display: block; font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: 1; color: #fff; }
+main { padding-top: 48px; padding-bottom: 96px; }
+h2 { font-family: var(--serif); font-weight: 400; font-size: 38px; margin: 48px 0 14px; }
+h2:first-child { margin-top: 0; }
+h2 em { font-style: italic; }
+.cards { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+@media (min-width: 768px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+.cards > div { background: var(--ink); padding: 22px; min-width: 0; }
+.cards b { display: block; font-family: var(--serif); font-weight: 400; font-size: 30px; margin: 8px 0 4px; }
+.cards p { color: var(--muted); font-size: 13.5px; overflow-wrap: break-word; }
+.cards a { text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--mono); font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.mono { font-family: var(--mono); font-size: 12px; }
+td a { text-decoration: underline; text-underline-offset: 3px; }
+.pill { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border-radius: 9999px; padding: 2px 9px; border: 1px solid; }
+.pill.ok { color: var(--green); border-color: rgba(79,178,122,.5); }
+.pill.wait { color: var(--amber); border-color: rgba(227,165,64,.5); }
+.pill.err { color: var(--bad); border-color: rgba(255,90,95,.5); }
+.empty { color: var(--dim); padding: 18px 14px; }
+.lookup { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 14px; }
+.lookup input { flex: 1; min-width: 260px; background: var(--ink-2); border: 1px solid var(--line-2); color: var(--text); border-radius: 9999px; padding: 11px 16px; font: 13px var(--mono); outline: none; }
+.lookup button { border: 0; border-radius: 9999px; padding: 11px 20px; background: var(--text); color: var(--ink); font: 500 14px var(--sans); cursor: pointer; }
+pre { font-family: var(--mono); font-size: 12px; background: #070707; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; overflow-x: auto; color: #e6e1d8; display: none; }
+.note { color: var(--muted); font-size: 14px; max-width: 780px; }
+footer { padding: 32px 0 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body>
+<header class="band">
+  <nav>
+    <div class="wrap">
+      <a class="brand" href="/"><img class="logo" src="/assets/logo.webp" alt="" width="34" height="34">TELL</a>
+      <div class="links"><a href="/">Check</a><a href="/launches">Launches</a><a href="/compare">Compare</a><a href="/app">Token map</a><a href="/docs">API</a><a href="/proof" class="on">Proof</a></div>
+      <div data-wallet></div>
+    </div>
+  </nav>
+  <div class="wrap">
+    <span class="label">Verdict ledger · revenue · burns</span>
+    <h1>Don't trust the score. <em>Verify it.</em></h1>
+    <p>Every verdict Tell gives is hashed and anchored on Robinhood Chain once an hour. Every x402 payment and every $TELL burn is listed here with its transaction.</p>
+    <div class="stats">
+      <div><b id="s-verdicts">—</b><span class="label">Verdicts recorded</span></div>
+      <div><b id="s-batches">—</b><span class="label">Roots anchored</span></div>
+      <div><b id="s-paid">—</b><span class="label">Paid checks</span></div>
+      <div><b id="s-usdg">—</b><span class="label">USDG earned</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h2>Where the <em>money goes.</em></h2>
+  <div class="cards">
+    <div><span class="label">Treasury</span><b id="c-treasury">Not set</b><p id="c-treasury-p">x402 payments are not switched on yet. Full checks are free until they are.</p></div>
+    <div><span class="label">$TELL burned</span><b id="c-burn">Not launched</b><p id="c-burn-p">A share of x402 revenue buys $TELL and sends it to 0x…dEaD. The total is read from the chain.</p></div>
+    <div><span class="label">Anchor wallet</span><b id="c-anchor">Off</b><p id="c-anchor-p">Hourly roots are written as tx data "TELL" + root from this wallet to itself.</p></div>
+  </div>
+
+  <h2>Hourly <em>roots.</em></h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Batch (UTC)</th><th>Verdicts</th><th>Merkle root</th><th>Anchor tx</th></tr></thead>
+    <tbody id="batches"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+  </table></div>
+
+  <h2>Check one <em>token.</em></h2>
+  <p class="note">Every verdict Tell recorded for a token, each with the Merkle proof that ties it to an anchored root.</p>
+  <form class="lookup" id="lookup"><input id="tok" placeholder="0x… token address" spellcheck="false" autocomplete="off"><button>Show proofs</button></form>
+  <pre id="proofs"></pre>
+
+  <h2>Recent <em>payments.</em></h2>
+  <div class="tbl"><table>
+    <thead><tr><th>When</th><th>Payer</th><th>USDG</th><th>Tx</th></tr></thead>
+    <tbody id="pays"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody>
+  </table></div>
+
+  <h2>How to <em>verify.</em></h2>
+  <p class="note">Leaf = <code>keccak256(abi.encode(address token, uint8 score, bytes32 keccak256(verdict), bytes32 keccak256(checks), uint64 checkedAtMs))</code>. Pairs are hashed sorted, an odd node moves up unchanged. Take a proof from <code>/api/v1/proof/0x…</code>, fold it into the leaf, and compare with the root in the anchor transaction's data (after the 4 bytes <code>0x54454c4c</code>).</p>
+</main>
+
+<footer><div class="wrap">© 2026 Tell · tell.markets · Not financial advice.</div></footer>
+
+<script>
+const X = 'https://robinhoodchain.blockscout.com';
+const short = s => s ? s.slice(0, 8) + '…' + s.slice(-6) : '';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = n => n.toLocaleString('en-US');
+
+fetch('/api/v1/proof').then(r => r.json()).then(p => {
+  document.getElementById('s-verdicts').textContent = fmt(p.verdicts);
+  document.getElementById('s-batches').textContent = fmt(p.batches.filter(b => b.tx).length);
+  document.getElementById('s-paid').textContent = fmt(p.revenue.payments);
+  document.getElementById('s-usdg').textContent = '$' + p.revenue.usdg.toFixed(2);
+
+  if (p.treasury) {
+    document.getElementById('c-treasury').innerHTML = `<a href="${X}/address/${esc(p.treasury)}" target="_blank" rel="noopener">${short(p.treasury)}</a>`;
+    document.getElementById('c-treasury-p').textContent = p.payments ? `Receives every x402 payment. Last 24h: ${p.revenue.last24h.payments} paid checks, $${p.revenue.last24h.usdg.toFixed(2)}.` : 'Treasury set; payments switch on once the settler wallet is configured.';
+  }
+  if (p.tell) {
+    document.getElementById('c-burn').textContent = fmt(p.tell.burned) + ' $TELL';
+    document.getElementById('c-burn-p').innerHTML = `Balance of 0x…dEaD for <a href="${X}/token/${esc(p.tell.token)}" target="_blank" rel="noopener">${short(p.tell.token)}</a>, read live from the chain.`;
+  }
+  if (p.anchorAddress) {
+    document.getElementById('c-anchor').innerHTML = `<a href="${X}/address/${esc(p.anchorAddress)}" target="_blank" rel="noopener">${short(p.anchorAddress)}</a>`;
+  } else {
+    document.getElementById('c-anchor-p').textContent = 'Anchoring switches on once the proof wallet is configured. Roots are still computed and listed below.';
+  }
+
+  const rows = p.batches.map(b => `<tr><td>${esc(b.id)}</td><td>${fmt(b.count)}</td><td class="mono">${short(b.root)}</td><td>${
+    b.tx ? `<a href="${X}/tx/${esc(b.tx)}" target="_blank" rel="noopener">${short(b.tx)}</a> <span class="pill ok">anchored</span>`
+      : b.error?.startsWith('waiting for gas') ? '<span class="pill wait">waiting for gas</span>'
+      : b.error ? `<span class="pill err" title="${esc(b.error)}">failed</span>` : '<span class="pill wait">not anchored</span>'}</td></tr>`);
+  document.getElementById('batches').innerHTML = rows.join('') || `<tr><td colspan="4" class="empty">No batch closed yet. ${p.pending ? `${fmt(p.pending)} verdicts wait for the next hourly root.` : 'The first root closes within the hour after the first check.'}</td></tr>`;
+
+  const pays = p.revenue.recent.map(x => `<tr><td>${new Date(x.at).toLocaleString()}</td><td class="mono"><a href="${X}/address/${esc(x.payer)}" target="_blank" rel="noopener">${short(x.payer)}</a></td><td>$${x.usdg.toFixed(2)}</td><td><a href="${X}/tx/${esc(x.tx)}" target="_blank" rel="noopener">${short(x.tx)}</a></td></tr>`);
+  document.getElementById('pays').innerHTML = pays.join('') || '<tr><td colspan="4" class="empty">No paid checks yet.</td></tr>';
+}).catch(() => { document.getElementById('batches').innerHTML = '<tr><td colspan="4" class="empty">Could not load the ledger.</td></tr>'; });
+
+document.getElementById('lookup').onsubmit = async e => {
+  e.preventDefault();
+  const t = document.getElementById('tok').value.trim();
+  const out = document.getElementById('proofs');
+  out.style.display = 'block';
+  if (!/^0x[a-fA-F0-9]{40}$/.test(t)) { out.textContent = 'Enter a 0x… token address.'; return; }
+  out.textContent = 'Loading…';
+  const r = await (await fetch('/api/v1/proof/' + t)).json();
+  out.textContent = r.verdicts?.length ? JSON.stringify(r, null, 2) : 'No recorded verdicts for this token yet. Check it on tell.markets first.';
+};
+</script>
+</body>
+</html>

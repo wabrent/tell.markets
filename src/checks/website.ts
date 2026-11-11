@@ -32,15 +32,19 @@ const PRODUCT: Record<AiReview['product'], Omit<Check, 'group' | 'detail'> | und
   no_site: undefined,
 };
 
+/** Topics a rule-based check already scores; the AI repeating one would count it twice. */
+const TOPICS = [/audit/i, /look-alike|pons domain/i, /github/i, /app link/i];
+
 /** Turns the AI review into checks. AI findings can only add risk, never remove it. */
-export function aiChecks(review: AiReview | undefined, site: Site | undefined): Check[] {
+export function aiChecks(review: AiReview | undefined, site: Site | undefined, existing: Check[] = []): Check[] {
+  const covered = TOPICS.filter(t => existing.some(c => c.risk > 0 && t.test(c.title)));
   if (!site?.ok) return [];
   if (!review) return [{ group: 'website', status: 'info', title: 'AI review unavailable right now', risk: 0 }];
 
   const checks: Check[] = [];
   const p = PRODUCT[review.product];
   if (p) checks.push({ group: 'website', ...p, detail: review.product_note || undefined });
-  for (const f of review.red_flags.slice(0, 4)) {
+  for (const f of review.red_flags.filter(f => !covered.some(t => t.test(f.title + ' ' + f.detail))).slice(0, 4)) {
     checks.push({
       group: 'website', status: f.severity === 'high' ? 'bad' : 'warn',
       title: f.title, detail: f.detail, risk: f.severity === 'high' ? 20 : 5,

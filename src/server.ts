@@ -8,12 +8,20 @@ import { config } from './config.js';
 import { launchesResponse, startLaunchWatcher } from './launches.js';
 import { siteCard, tokenCard } from './og.js';
 import { cachedReport, getReport, scoreHistory } from './reports.js';
+import { handleApi } from './api.js';
+import { handleMcp } from './mcp.js';
+import { startProofLedger } from './proof.js';
+import { startTelegram } from './bots/telegram.js';
+import { startX } from './bots/x.js';
+import { paymentsEnabled } from './x402.js';
 
 const PAGES: Record<string, URL> = {
   index: new URL('../web/index.html', import.meta.url),
   app: new URL('../web/app.html', import.meta.url),
   launches: new URL('../web/launches.html', import.meta.url),
   compare: new URL('../web/compare.html', import.meta.url),
+  docs: new URL('../web/docs.html', import.meta.url),
+  proof: new URL('../web/proof.html', import.meta.url),
 };
 const TYPES: Record<string, string> = { webp: 'image/webp', png: 'image/png', jpg: 'image/jpeg', svg: 'image/svg+xml', js: 'text/javascript; charset=utf-8' };
 const RATE_LIMIT = 20; // checks per IP per minute
@@ -26,7 +34,12 @@ createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   const path = url.pathname;
   try {
-    // ---------- API ----------
+    // ---------- agent API + MCP ----------
+    const base = config.publicUrl || `${secure(req) ? 'https' : 'http'}://${req.headers.host}`;
+    if (path.startsWith('/api/v1') && await handleApi(req, res, url, base)) return;
+    if (path === '/mcp') return await handleMcp(req, res, base);
+
+    // ---------- site API ----------
     if (path === '/api/check') return await check(req, res, url);
     if (path === '/api/launches') return json(res, 200, await launchesResponse(config.launchWatcher));
     if (path === '/api/health') {
@@ -81,6 +94,10 @@ createServer(async (req, res) => {
     if (path === '/app' || path.startsWith('/app/')) return page(req, res, 'app', addr);
     if (path === '/launches') return page(req, res, 'launches');
     if (path === '/compare') return page(req, res, 'compare');
+    if (path === '/docs') return page(req, res, 'docs');
+    if (path === '/proof') return page(req, res, 'proof');
+    if (path === '/robots.txt') { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('User-agent: *\nAllow: /\n'); }
+    if (path === '/llms.txt') { res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' }); return res.end(llmsTxt(config.publicUrl || 'https://tell.markets')); }
 
     const asset = path.match(/^\/assets\/([\w.-]+\.(webp|png|jpg|svg|js))$/);
     if (asset) {
@@ -98,7 +115,29 @@ createServer(async (req, res) => {
 }).listen(config.port, () => {
   console.log(`Tell: http://localhost:${config.port}`);
   if (config.launchWatcher) startLaunchWatcher();
+  const site = config.publicUrl || `http://localhost:${config.port}`;
+  startProofLedger();
+  startTelegram(site);
+  startX(site);
+  console.log(`x402 payments: ${paymentsEnabled() ? `on, ${config.priceFull} USDG per full check -> ${config.payTo}` : 'off (set X402_PAY_TO and X402_SETTLER_KEY)'}`);
 });
+
+function llmsTxt(base: string) {
+  return `# Tell
+
+> Risk checks for tokens on Robinhood Chain (chain id 4663): contract powers, holders, deployer history, website claims and market, in one 0-100 score with a plain-language verdict. Facts, not financial advice.
+
+## For agents
+- MCP server (Streamable HTTP): ${base}/mcp — tools: check_token, compare_tokens, recent_launches, verdict_proof, pricing
+- REST: ${base}/api/v1/check?token=0x…&mode=quick|full
+- OpenAPI: ${base}/api/v1/openapi.json
+- Payments: full checks past the free allowance answer HTTP 402 with x402 requirements (scheme exact, USDG on eip155:4663)
+
+## Docs
+- ${base}/docs
+- Verdict ledger: ${base}/proof
+`;
+}
 
 async function check(req: IncomingMessage, res: ServerResponse, url: URL) {
   const ip = clientIp(req);

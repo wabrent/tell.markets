@@ -21,7 +21,7 @@ const MAX_HTML = 3_000_000;
  * The URL comes from DexScreener, i.e. whoever listed the token. Refuse anything that isn't a
  * public http(s) host so a listing can't point the server at its own network.
  */
-function safeUrl(raw: string): URL | undefined {
+export function safeUrl(raw: string): URL | undefined {
   let u: URL;
   try { u = new URL(raw); } catch { return undefined; }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return undefined;

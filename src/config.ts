@@ -20,4 +20,40 @@ export const config = {
    * so it is off on Vercel unless LAUNCH_WATCHER=on is set explicitly.
    */
   launchWatcher: process.env.LAUNCH_WATCHER ? process.env.LAUNCH_WATCHER !== 'off' : !process.env.VERCEL,
+
+  // ---------- agent API ----------
+  /** Full checks a day per caller through /api/v1 and MCP before payment is asked for. */
+  freeFullPerDay: num(process.env.FREE_FULL_PER_DAY, 5),
+
+  // ---------- x402 payments (USDG on Robinhood Chain) ----------
+  /** Treasury that receives payments. Empty switches payments off: everything stays free. */
+  payTo: (process.env.X402_PAY_TO ?? '').toLowerCase(),
+  /** Price of a full check in USDG. */
+  priceFull: num(process.env.X402_PRICE_FULL, 0.03),
+  /** Key of a wallet that only holds gas ETH; it submits the signed USDG transfers. */
+  settlerKey: process.env.X402_SETTLER_KEY ?? '',
+  /** Alternative to a settler key: an x402 facilitator with /verify and /settle. */
+  facilitatorUrl: (process.env.X402_FACILITATOR_URL ?? '').replace(/\/$/, ''),
+
+  // ---------- proof ledger ----------
+  /** Key that anchors the hourly verdict root on-chain (a 0-value tx to itself). Defaults to the settler. */
+  proofKey: process.env.PROOF_KEY || process.env.X402_SETTLER_KEY || '',
+
+  // ---------- bots ----------
+  telegramToken: process.env.TELEGRAM_BOT_TOKEN ?? '',
+  /** Channel (@name or numeric id) that gets a post for each checked launch. */
+  telegramChannel: process.env.TELEGRAM_CHANNEL ?? '',
+  x: {
+    apiKey: process.env.X_API_KEY ?? '',
+    apiSecret: process.env.X_API_SECRET ?? '',
+    accessToken: process.env.X_ACCESS_TOKEN ?? '',
+    accessSecret: process.env.X_ACCESS_SECRET ?? '',
+    /** UTC hour of the daily "Launches today" post. */
+    digestHour: num(process.env.X_DIGEST_HOUR, 18),
+  },
 };
+
+function num(v: string | undefined, fallback: number) {
+  const n = Number(v);
+  return v !== undefined && v !== '' && Number.isFinite(n) ? n : fallback;
+}

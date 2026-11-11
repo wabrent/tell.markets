@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "tell",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["start"],
+      "runtimeExecutable": "C:\\Users\\waabrent\\nodejs\\node-v26.13.0-win-x64\\node.exe",
+      "runtimeArgs": ["node_modules/tsx/dist/cli.mjs", "src/server.ts"],
       "port": 3000
     }
   ]

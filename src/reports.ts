@@ -1,4 +1,5 @@
 import { analyze, type Report } from './analyze.js';
+import { events } from './events.js';
 import { background } from './sources/rpc.js';
 import { JsonStore } from './store.js';
 
@@ -26,7 +27,11 @@ export async function getReport(address: `0x${string}`, opts: { maxAge?: number 
     let p = inflight.get(key);
     if (!p) {
       p = analyze(address).then(report => {
-        cache.set(key, { at: Date.now(), report });
+        const at = Date.now();
+        cache.set(key, { at, report });
+        if (!report.degraded) {
+          try { events.emit('report', report, at); } catch (err) { console.error('report listener failed', err); }
+        }
         // a half-loaded report says nothing about how risk moved
         if (!report.degraded) {
           const h = history.get(key) ?? [];

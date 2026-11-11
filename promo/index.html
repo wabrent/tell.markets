@@ -1,0 +1,354 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Tell promo</title>
+<style>
+@font-face { font-family: 'Serif'; src: url('../assets/fonts/InstrumentSerif-Regular.ttf'); }
+@font-face { font-family: 'Serif'; font-style: italic; src: url('../assets/fonts/InstrumentSerif-Italic.ttf'); }
+@font-face { font-family: 'Inter'; src: url('../assets/fonts/Inter.ttf'); font-weight: 100 900; }
+@font-face { font-family: 'Mono'; src: url('../assets/fonts/JetBrainsMono.ttf'); font-weight: 100 900; }
+
+:root {
+  --red: #a3111a; --red-deep: #5c060c; --ink: #0c0b0b; --card: #151313;
+  --bone: #f2eee6; --mute: #9b9590; --yellow: #e6c24b; --green: #5cbf72; --orange: #eb9a3c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+body { font-family: 'Inter', sans-serif; color: var(--bone); }
+
+#stage { position: absolute; inset: 0; overflow: hidden; }
+#cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.scene { position: absolute; inset: 0; overflow: hidden; visibility: hidden; }
+
+.serif { font-family: 'Serif', serif; font-weight: 400; letter-spacing: -0.02em; line-height: .9; }
+.mono { font-family: 'Mono', monospace; letter-spacing: .22em; text-transform: uppercase; }
+.redbg { background: radial-gradient(120% 120% at 70% 30%, #b8161f 0%, var(--red) 40%, var(--red-deep) 100%); }
+.inkbg { background: radial-gradient(100% 100% at 50% 40%, #1c1414 0%, var(--ink) 70%); }
+
+/* overlays */
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; mix-blend-mode: normal; }
+#grain { position: absolute; inset: -20px; opacity: .13; pointer-events: none; mix-blend-mode: overlay; }
+#vignette { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%); }
+#scanline { position: absolute; left: 0; right: 0; height: 3px; background: rgba(255,255,255,.5); opacity: 0; pointer-events: none; box-shadow: 0 0 30px 6px rgba(255,255,255,.25); }
+
+/* S1 hook */
+.hook { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.hook .word { font-size: 300px; white-space: nowrap; }
+.hook .tag { position: absolute; top: 70px; left: 90px; font-size: 22px; color: var(--mute); }
+#s1c .word { font-size: 520px; color: #ff2a35; font-style: italic; }
+
+/* S2 hero */
+#s2 .statue { position: absolute; right: -60px; top: -40px; height: 1180px; }
+#s2 .copy { position: absolute; left: 130px; top: 260px; }
+#s2 .kicker { font-size: 22px; color: rgba(255,255,255,.75); margin-bottom: 40px; }
+#s2 .line { overflow: hidden; height: 205px; }
+#s2 .line span { display: inline-block; font-size: 220px; }
+#s2 .under { height: 6px; background: var(--bone); width: 0; margin-top: 18px; }
+
+/* S3 paste */
+#s3 .label { position: absolute; top: 330px; left: 0; right: 0; text-align: center; font-size: 26px; color: var(--mute); }
+#s3 .bar { position: absolute; top: 420px; left: 160px; right: 160px; height: 150px; border-radius: 80px;
+  background: #2a0a0d; border: 2px solid rgba(255,255,255,.18); display: flex; align-items: center; padding: 0 30px 0 60px; }
+#s3 .addr { font-family: 'Mono', monospace; font-size: 40px; color: var(--bone); flex: 1; white-space: nowrap; }
+#s3 .caret { display: inline-block; width: 4px; height: 50px; background: var(--bone); vertical-align: middle; margin-left: 4px; }
+#s3 .btn { height: 104px; padding: 0 54px; border-radius: 60px; background: var(--bone); color: #111; font-size: 36px; font-weight: 600; display: flex; align-items: center; }
+#s3 .hint { position: absolute; top: 640px; left: 0; right: 0; text-align: center; font-size: 22px; color: rgba(255,255,255,.45); }
+
+/* S4 score */
+#s4 .left { position: absolute; left: 140px; top: 170px; width: 700px; }
+#s4 .tok { font-size: 34px; font-weight: 600; } #s4 .tok small { color: var(--mute); font-weight: 400; font-size: 26px; margin-left: 10px; }
+#s4 .num { font-size: 400px; margin-top: 10px; display: flex; align-items: baseline; }
+#s4 .num small { font-family: 'Inter'; font-size: 34px; color: var(--mute); margin-left: 24px; letter-spacing: 0; }
+#s4 .track { height: 10px; background: #2b2626; border-radius: 6px; overflow: hidden; width: 640px; }
+#s4 .fill { height: 100%; width: 0; background: var(--yellow); }
+#s4 .pill { display: inline-block; margin-top: 34px; padding: 14px 30px; border: 2px solid var(--yellow); border-radius: 40px; color: var(--yellow); font-size: 26px; }
+#s4 .verdict { margin-top: 22px; font-size: 50px; width: 760px; line-height: 1.08; letter-spacing: 0; }
+#s4 .vlabel { margin-top: 40px; font-size: 20px; color: var(--mute); }
+#s4 .right { position: absolute; left: 1000px; top: 200px; width: 800px; }
+#s4 .item { display: flex; align-items: center; gap: 28px; padding: 30px 36px; background: var(--card); border: 1px solid #2a2525; border-radius: 22px; margin-bottom: 20px; font-size: 38px; }
+#s4 .dot { width: 20px; height: 20px; border-radius: 50%; flex: none; }
+#s4 .sect { font-size: 18px; color: var(--mute); margin-left: auto; }
+
+/* screenshot scenes */
+.shot { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; }
+.shot img { display: block; width: 100%; }
+.ring { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border: 4px solid #ff3742; border-radius: 50%; opacity: 0; box-shadow: 0 0 30px #ff3742; }
+.chip { position: absolute; font-family: 'Mono'; font-size: 15px; letter-spacing: .15em; background: #ff3742; color: #fff; padding: 6px 12px; border-radius: 6px; opacity: 0; white-space: nowrap; }
+.overline { position: absolute; left: 110px; bottom: 120px; }
+.overline .k { font-size: 22px; color: rgba(255,255,255,.8); margin-bottom: 18px; }
+.overline .t { font-size: 150px; text-shadow: 0 10px 60px rgba(0,0,0,.8); }
+.overline .t i { font-style: italic; }
+.shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.2) 55%, transparent 100%); }
+.shadeb { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.1) 55%, transparent 100%); }
+
+#s6 .stamp { position: absolute; right: 110px; top: 440px; background: var(--bone); color: #111; padding: 26px 40px; font-size: 64px; font-family: 'Mono'; font-weight: 700; letter-spacing: .04em; transform: rotate(-4deg); box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+#s6 .stamp em { color: #c0121c; font-style: normal; }
+
+#s8 .card { position: absolute; left: 50%; top: 50%; width: 1320px; margin-left: -660px; margin-top: -347px; border-radius: 26px; overflow: hidden; box-shadow: 0 60px 140px rgba(0,0,0,.65), 0 0 0 2px rgba(255,255,255,.12); }
+#s8 .card img { display: block; width: 100%; }
+#s8 .k { position: absolute; top: 70px; left: 0; right: 0; text-align: center; font-size: 26px; color: rgba(255,255,255,.85); }
+#s8 .xbtn { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: 600; background: #000; color: #fff; padding: 20px 44px; border-radius: 50px; border: 2px solid rgba(255,255,255,.2); }
+
+/* stats */
+.stat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stat .big { font-size: 470px; }
+.stat .cap { font-size: 34px; margin-top: 20px; }
+
+/* end */
+#s10 .statue { position: absolute; right: -120px; top: -60px; height: 1220px; opacity: .9; }
+#s10 .wrap { position: absolute; left: 140px; top: 210px; }
+#s10 .brand { display: flex; align-items: center; gap: 30px; }
+#s10 .brand img { width: 110px; height: 110px; border-radius: 50%; }
+#s10 .brand span { font-family: 'Serif'; font-size: 96px; letter-spacing: .32em; }
+#s10 .url { font-size: 230px; margin-top: 60px; }
+#s10 .url i { font-style: italic; }
+#s10 .sub { font-size: 40px; margin-top: 34px; color: rgba(255,255,255,.88); }
+#s10 .cta { display: inline-block; margin-top: 56px; background: var(--bone); color: #111; font-size: 34px; font-weight: 600; padding: 26px 56px; border-radius: 60px; }
+#s10 .nfa { position: absolute; left: 140px; bottom: 60px; font-size: 18px; color: rgba(255,255,255,.6); }
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="cam">
+
+  <!-- S1: hook -->
+  <section class="scene inkbg" id="s1a"><div class="hook"><div class="tag mono">Robinhood Chain · 03:14</div><div class="word serif">New token.</div></div></section>
+  <section class="scene redbg" id="s1b"><div class="hook"><div class="tag mono" style="color:rgba(255,255,255,.7)">+1,607 today</div><div class="word serif">New <i>hype.</i></div></div></section>
+  <section class="scene inkbg" id="s1c"><div class="hook"><div class="word serif">Rug?</div></div></section>
+
+  <!-- S2: hero -->
+  <section class="scene redbg" id="s2">
+    <img class="statue" src="../web/assets/statue.webp">
+    <div class="copy">
+      <div class="kicker mono">Launch checks on Robinhood Chain</div>
+      <div class="line"><span class="serif" id="h1">Read the tell</span></div>
+      <div class="line" style="height:230px"><span class="serif" id="h2">before you <i>buy.</i></span></div>
+      <div class="under" id="h3"></div>
+    </div>
+  </section>
+
+  <!-- S3: paste -->
+  <section class="scene inkbg" id="s3">
+    <div class="label mono">Paste a token</div>
+    <div class="bar" id="bar"><div class="addr"><span id="typed"></span><span class="caret" id="caret"></span></div><div class="btn" id="btn">Check token →</div></div>
+    <div class="hint mono">or a DexScreener link</div>
+  </section>
+
+  <!-- S4: score -->
+  <section class="scene inkbg" id="s4">
+    <div class="left">
+      <div class="tok">$HOOD <small>RobinHood</small></div>
+      <div class="num serif"><span id="score">0</span><small>/ 100 risk</small></div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="pill mono" id="pill">Medium risk</div>
+      <div class="vlabel mono" id="vl">AI verdict</div>
+      <div class="verdict serif" id="verdict">No site to inspect. The deployer sold their entire bag.</div>
+    </div>
+    <div class="right" id="items">
+      <div class="item"><span class="dot" style="background:var(--green)"></span>No owner<span class="sect mono">Contract</span></div>
+      <div class="item"><span class="dot" style="background:var(--green)"></span>Top 10 hold 20.4%<span class="sect mono">Holders</span></div>
+      <div class="item"><span class="dot" style="background:var(--green)"></span>Snipers sold out<span class="sect mono">Holders</span></div>
+      <div class="item"><span class="dot" style="background:var(--orange)"></span>Deployer sold whole bag<span class="sect mono">Deployer</span></div>
+      <div class="item"><span class="dot" style="background:var(--orange)"></span>No website listed<span class="sect mono">Website</span></div>
+      <div class="item"><span class="dot" style="background:var(--orange)"></span>No DEX pool yet<span class="sect mono">Market</span></div>
+    </div>
+  </section>
+
+  <!-- S5: map -->
+  <section class="scene" id="s5" style="background:#120a0a">
+    <div class="shot" id="mapshot" style="width:1920px;height:1200px;top:-60px">
+      <img src="../docs/img/map.jpg">
+      <div class="ring" id="ring" style="left:66.06%;top:56.8%"></div>
+      <div class="chip" id="chip" style="left:68.5%;top:52.5%">Deployer sold</div>
+    </div>
+    <div class="shadeb"></div>
+    <div class="overline"><div class="k mono" id="mk">Token map</div><div class="t serif" id="mt">Watch where the <i>supply goes.</i></div></div>
+  </section>
+
+  <!-- S6: launches -->
+  <section class="scene" id="s6" style="background:#0c0b0b">
+    <div class="shot" id="lshot" style="width:1920px"><img src="../docs/img/launches.jpg"></div>
+    <div class="stamp" id="stamp">EVERY LAUNCH. <em>LIVE.</em></div>
+  </section>
+
+  <!-- S7: compare -->
+  <section class="scene" id="s7" style="background:#0c0b0b">
+    <div class="shot" id="cshot" style="width:1920px"><img src="../docs/img/compare.jpg"></div>
+    <div class="shade"></div>
+    <div class="overline"><div class="k mono">Compare</div><div class="t serif" id="ct">Two tokens. <i>One winner.</i></div></div>
+  </section>
+
+  <!-- S8: share -->
+  <section class="scene redbg" id="s8">
+    <div class="k mono">One link. One card.</div>
+    <div class="card" id="card"><img src="../docs/img/share-card.jpg"></div>
+    <div class="xbtn" id="xbtn">Share on X</div>
+  </section>
+
+  <!-- S9: stats -->
+  <section class="scene inkbg" id="s9a"><div class="stat"><div class="big serif">5</div><div class="cap mono">Check groups</div></div></section>
+  <section class="scene redbg" id="s9b"><div class="stat"><div class="big serif">1</div><div class="cap mono">Risk score</div></div></section>
+  <section class="scene inkbg" id="s9c"><div class="stat"><div class="big serif">$0</div><div class="cap mono">No sign-up</div></div></section>
+
+  <!-- S10: end -->
+  <section class="scene redbg" id="s10">
+    <img class="statue" src="../web/assets/statue.webp">
+    <div class="wrap">
+      <div class="brand" id="eb"><img src="../web/assets/logo.webp"><span>TELL</span></div>
+      <div class="url serif" id="eu">tell<i>.markets</i></div>
+      <div class="sub" id="es">Read the tell before you buy.</div>
+      <div class="cta" id="ec">Check a token →</div>
+    </div>
+    <div class="nfa mono">Not financial advice</div>
+  </section>
+
+</div>
+<svg id="grain" width="1960" height="1120"><filter id="n"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div id="vignette"></div>
+<div id="scanline"></div>
+<div id="flash"></div>
+</div>
+
+<script src="node_modules/gsap/dist/gsap.min.js"></script>
+<script>
+const D = 22.5;
+// scene windows [id, start, end]
+const scenes = [
+  ['s1a', 0, .62], ['s1b', .62, 1.24], ['s1c', 1.24, 2.1],
+  ['s2', 2.1, 4.4], ['s3', 4.4, 6.25], ['s4', 6.25, 9.6],
+  ['s5', 9.6, 12.7], ['s6', 12.7, 14.9], ['s7', 14.9, 16.6],
+  ['s8', 16.6, 18.4], ['s9a', 18.4, 18.85], ['s9b', 18.85, 19.3], ['s9c', 19.3, 19.8],
+  ['s10', 19.8, D],
+];
+const cuts = scenes.slice(1).map(s => s[1]);
+const flashCuts = new Set([1.24, 2.1, 6.25, 9.6, 16.6, 18.4, 19.8]);
+
+const tl = gsap.timeline({ paused: true });
+const E = 'expo.out';
+
+// S1
+tl.fromTo('#s1a .word', { scale: 1.5, opacity: 0 }, { scale: 1, opacity: 1, duration: .28, ease: E }, 0)
+  .to('#s1a .word', { scale: 1.06, duration: .34, ease: 'none' }, .28)
+  .fromTo('#s1b .word', { scale: 1.5 }, { scale: 1, duration: .28, ease: E }, .62)
+  .to('#s1b .word', { scale: 1.06, duration: .34, ease: 'none' }, .9)
+  .fromTo('#s1c .word', { scale: 2.4, rotate: -8 }, { scale: 1, rotate: -3, duration: .35, ease: 'back.out(2.2)' }, 1.24)
+  .to('#s1c .word', { scale: 1.12, duration: .5, ease: 'none' }, 1.6);
+
+// S2
+tl.fromTo('#s2 .statue', { x: 260, scale: 1.18 }, { x: 0, scale: 1.02, duration: 2.3, ease: 'power3.out' }, 2.1)
+  .fromTo('#s2 .kicker', { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: .4, ease: E }, 2.15)
+  .fromTo('#h1', { yPercent: 110 }, { yPercent: 0, duration: .45, ease: E }, 2.2)
+  .fromTo('#h2', { yPercent: 110 }, { yPercent: 0, duration: .45, ease: E }, 2.5)
+  .to('#h3', { width: 980, duration: .5, ease: 'power4.inOut' }, 2.9)
+  .fromTo('#s2 .copy', { scale: 1 }, { scale: 1.07, transformOrigin: '20% 60%', duration: 1.1, ease: 'power2.in' }, 3.3);
+
+// S3
+tl.fromTo('#bar', { scaleX: .2, opacity: 0 }, { scaleX: 1, opacity: 1, duration: .35, ease: E }, 4.4)
+  .fromTo('#s3 .label', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .3, ease: E }, 4.45)
+  .fromTo('#s3 .hint', { opacity: 0 }, { opacity: 1, duration: .3 }, 4.6)
+  .to('#btn', { scale: .9, duration: .08 }, 5.7)
+  .to('#btn', { scale: 1.08, background: '#fff', duration: .14, ease: 'back.out(3)' }, 5.78)
+  .to('#bar', { scale: 1.6, opacity: 0, duration: .32, ease: 'power3.in' }, 5.93);
+
+// S4
+tl.fromTo('#s4 .left', { x: -80, opacity: 0 }, { x: 0, opacity: 1, duration: .35, ease: E }, 6.25)
+  .to('#fill', { width: '40%', duration: .8, ease: 'power3.out' }, 6.35)
+  .fromTo('#pill', { scale: 2.2, opacity: 0, rotate: -6 }, { scale: 1, opacity: 1, rotate: 0, duration: .32, ease: 'back.out(2.5)' }, 7.15)
+  .fromTo('#items .item', { x: 140, opacity: 0 }, { x: 0, opacity: 1, duration: .32, ease: E, stagger: .11 }, 7.3)
+  .fromTo('#vl', { opacity: 0 }, { opacity: 1, duration: .2 }, 8.15)
+  .fromTo('#verdict', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .4, ease: E }, 8.2)
+  .to('#s4 .left, #items', { scale: 1.04, duration: 1.3, ease: 'none' }, 8.3);
+
+// S5 map
+tl.fromTo('#mapshot', { scale: 1.0 }, { scale: 1.5, transformOrigin: '64% 50%', duration: 3.1, ease: 'power2.inOut' }, 9.6)
+  .fromTo('#ring', { scale: 2.5, opacity: 0 }, { scale: 1, opacity: 1, duration: .35, ease: 'back.out(2)' }, 10.7)
+  .to('#ring', { scale: 1.25, repeat: 3, yoyo: true, duration: .22, ease: 'sine.inOut' }, 11.05)
+  .fromTo('#chip', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .25, ease: E }, 10.85)
+  .fromTo('#mk', { opacity: 0 }, { opacity: 1, duration: .25 }, 9.8)
+  .fromTo('#mt', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: .45, ease: E }, 9.85);
+
+// S6 launches
+tl.fromTo('#lshot', { y: 0, scale: 1.08 }, { y: -520, scale: 1, duration: 2.2, ease: 'power2.inOut' }, 12.7)
+  .fromTo('#stamp', { scale: 2.6, opacity: 0, rotate: 8 }, { scale: 1, opacity: 1, rotate: -4, duration: .3, ease: 'back.out(2.4)' }, 13.35);
+
+// S7 compare
+tl.fromTo('#cshot', { scale: 1.35, y: -40 }, { scale: 1.0, y: -110, transformOrigin: '50% 30%', duration: 1.7, ease: 'power3.out' }, 14.9)
+  .fromTo('#ct', { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: .4, ease: E }, 15.05);
+
+// S8 share
+tl.fromTo('#card', { y: 700, rotate: 10, scale: .8 }, { y: 0, rotate: -3, scale: 1, duration: .55, ease: 'back.out(1.4)' }, 16.6)
+  .to('#card', { rotate: 0, scale: 1.05, duration: 1.2, ease: 'none' }, 17.15)
+  .fromTo('#xbtn', { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: .3, ease: E }, 17.2)
+  .to('#xbtn', { scale: .92, duration: .07 }, 17.85)
+  .to('#xbtn', { scale: 1, duration: .15, ease: 'back.out(3)' }, 17.92);
+
+// S9 stats
+['#s9a', '#s9b', '#s9c'].forEach((s, i) => {
+  const t0 = [18.4, 18.85, 19.3][i];
+  tl.fromTo(s + ' .big', { scale: 1.9, opacity: 0 }, { scale: 1, opacity: 1, duration: .22, ease: E }, t0)
+    .fromTo(s + ' .cap', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .2, ease: E }, t0 + .06)
+    .to(s + ' .big', { scale: 1.08, duration: .3, ease: 'none' }, t0 + .22);
+});
+
+// S10 end
+tl.fromTo('#s10 .statue', { x: 200, scale: 1.15, opacity: 0 }, { x: 0, scale: 1, opacity: .9, duration: 1.6, ease: 'power3.out' }, 19.8)
+  .fromTo('#eb', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: .4, ease: E }, 19.85)
+  .fromTo('#eu', { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: E }, 20.0)
+  .fromTo('#es', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: .4, ease: E }, 20.35)
+  .fromTo('#ec', { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: .4, ease: 'back.out(2)' }, 20.6)
+  .to('#ec', { scale: 1.06, repeat: 1, yoyo: true, duration: .3, ease: 'sine.inOut' }, 21.4)
+  .to({}, { duration: .01 }, D);
+
+// deterministic pseudo-random
+const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const ADDR = '0x45C83b37C5BAF4dad26f3845C28295e2DE010962';
+const $ = (s) => document.querySelector(s);
+
+window.__duration = D;
+window.__seek = (t) => {
+  for (const [id, a, b] of scenes) $('#' + id).style.visibility = (t >= a && t < b) ? 'visible' : 'hidden';
+  if (t >= D) $('#s10').style.visibility = 'visible';
+  tl.seek(t, false);
+
+  // typing
+  const k = Math.max(0, Math.min(ADDR.length, Math.floor((t - 4.65) / .9 * ADDR.length)));
+  $('#typed').textContent = ADDR.slice(0, k);
+  $('#caret').style.opacity = (k < ADDR.length || Math.floor(t * 4) % 2 === 0) ? 1 : 0;
+
+  // score counter with slot-machine jitter
+  const p = Math.min(1, Math.max(0, (t - 6.35) / .8));
+  const eased = 1 - Math.pow(1 - p, 3);
+  $('#score').textContent = p < 1 ? Math.round(eased * 40 + (1 - p) * (rnd(Math.floor(t * 30)) * 30 - 15)).toString().replace('-', '') : '40';
+
+  // cuts: flash + shake + scanline
+  let flash = 0, sx = 0, sy = 0, scan = -1;
+  for (const c of cuts) {
+    const d = t - c;
+    if (d >= 0 && d < .2) {
+      const f = 1 - d / .2;
+      if (flashCuts.has(c)) flash = Math.max(flash, .85 * f * f);
+      sx += (rnd(t * 30 + 1) - .5) * 40 * f; sy += (rnd(t * 30 + 7) - .5) * 26 * f;
+      scan = d / .2;
+    }
+  }
+  // extra hits
+  for (const h of [1.24, 5.8, 7.15, 13.35]) { const d = t - h; if (d >= 0 && d < .25) { const f = 1 - d / .25; sx += (rnd(t * 30 + 3) - .5) * 50 * f; sy += (rnd(t * 30 + 9) - .5) * 34 * f; } }
+  $('#flash').style.opacity = flash;
+  $('#cam').style.transform = `translate(${sx}px, ${sy}px)`;
+  const sl = $('#scanline');
+  if (scan >= 0) { sl.style.opacity = .7 * (1 - scan); sl.style.top = (scan * 1080) + 'px'; } else sl.style.opacity = 0;
+
+  // chromatic split around cuts
+  let ab = 0; for (const c of cuts) { const d = t - c; if (d >= 0 && d < .12) ab = Math.max(ab, (1 - d / .12) * 10); }
+  $('#cam').style.filter = ab > .5 ? `drop-shadow(${ab}px 0 0 rgba(255,0,40,.55)) drop-shadow(${-ab}px 0 0 rgba(0,220,255,.45))` : 'none';
+
+  // grain
+  $('#turb').setAttribute('seed', Math.floor(t * 30) % 97);
+  $('#grain').style.transform = `translate(${(rnd(t*30+5)-.5)*20}px, ${(rnd(t*30+11)-.5)*20}px)`;
+};
+window.__seek(0);
+</script>
+</body>
+</html>

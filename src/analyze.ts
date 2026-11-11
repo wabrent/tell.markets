@@ -5,6 +5,7 @@ import { checkHolders } from './checks/holders.js';
 import { checkMarket, checkSocials } from './checks/market.js';
 import { aiReview } from './ai/review.js';
 import { aiChecks, checkSite } from './checks/website.js';
+import { checkPromises } from './checks/promises.js';
 import { fetchTransfers } from './sources/logs.js';
 import { fetchSite } from './sources/website.js';
 import { launchMeta, type LaunchMeta } from './sources/launch.js';
@@ -40,6 +41,8 @@ export interface Facts {
   holders?: number;
   deployer?: string;
   launches?: number;
+  /** Share of supply sent to the zero or dead address after the mint, in percent. */
+  burnedPct?: number;
 }
 
 /**
@@ -96,8 +99,28 @@ export async function analyze(address: `0x${string}`): Promise<Report> {
     ...checkSite(token, site),
   ];
 
-  // Stablecoins, WETH and stock tokens keep owner powers by design; don't score them like a memecoin.
-  const known = knownAsset(address);
+  applyIdentity(token, checks);
+  checks.push(...await checkPromises(token, site, onchain.burnedPct));
+
+  // The AI reads the site and sees every other finding, so it runs last.
+  const review = await aiReview(token, checks, site, meta?.description);
+  checks.push(...aiChecks(review, site, checks));
+
+  return {
+    token, pairs: ownPairs, checks, facts: onchain.facts, flow: onchain.flow, flowPartial: onchain.flowPartial, meta,
+    score: score(checks), verdict: review?.verdict || verdict(checks), aiVerdict: Boolean(review?.verdict),
+    // a token we couldn't read or whose history failed to load: show it, but don't trust it for long
+    degraded: onchain.degraded || token.symbol === undefined || token.totalSupply === undefined,
+    ms: Date.now() - started,
+  };
+}
+
+/**
+ * Known assets and Tell's own token. Stablecoins, WETH and stock tokens keep owner powers by
+ * design, so they aren't scored like a memecoin; anything posing as $TELL is flagged.
+ */
+export function applyIdentity(token: TokenInfo, checks: Check[]) {
+  const known = knownAsset(token.address);
   if (known) {
     for (const c of checks) {
       if (c.group !== 'contract' || c.status === 'ok') continue;
@@ -107,8 +130,7 @@ export async function analyze(address: `0x${string}`): Promise<Report> {
     checks.unshift({ group: 'contract', status: 'ok', title: `Recognized asset: ${known}`, risk: 0 });
   }
 
-  // Tell's own token is the one people will try to fake
-  const tell = tellIdentity(address, token.name, token.symbol);
+  const tell = tellIdentity(token.address, token.name, token.symbol);
   if (tell === 'official') {
     checks.unshift({ group: 'contract', status: 'ok', title: 'Official $TELL token', detail: 'the address published on tell.markets', risk: 0 });
   } else if (tell === 'impostor') {
@@ -120,22 +142,12 @@ export async function analyze(address: `0x${string}`): Promise<Report> {
       risk: 80, critical: true,
     });
   }
-
-  // The AI reads the site and sees every other finding, so it runs last.
-  const review = await aiReview(token, checks, site, meta?.description);
-  checks.push(...aiChecks(review, site));
-
-  return {
-    token, pairs: ownPairs, checks, facts: onchain.facts, flow: onchain.flow, flowPartial: onchain.flowPartial, meta,
-    score: score(checks), verdict: review?.verdict || verdict(checks), aiVerdict: Boolean(review?.verdict),
-    // a token we couldn't read or whose history failed to load: show it, but don't trust it for long
-    degraded: onchain.degraded || token.symbol === undefined || token.totalSupply === undefined,
-    ms: Date.now() - started,
-  };
 }
 
+const BURN_ADDRESSES = new Set([zeroAddress, '0x000000000000000000000000000000000000dead']);
+
 /** Holders and deployer both come from the token's full transfer history. */
-async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ checks: Check[]; facts: Facts; flow?: FlowGraph; flowPartial?: boolean; meta?: LaunchMeta; degraded?: boolean }> {
+async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ checks: Check[]; facts: Facts; flow?: FlowGraph; flowPartial?: boolean; meta?: LaunchMeta; degraded?: boolean; burnedPct?: number }> {
   try {
     const { transfers, complete } = await fetchTransfers(token.address);
     if (!complete) {
@@ -161,11 +173,16 @@ async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ check
         return { checks: [] as Check[], facts: {} as DeployerFacts };
       }),
     ]);
+    // tokens sent to the zero or dead address after the mint: what a "we burn" promise can be checked against
+    let burned = 0n;
+    for (const t of transfers) if (t.from !== zeroAddress && BURN_ADDRESSES.has(t.to.toLowerCase())) burned += t.value;
+    const burnedPct = token.totalSupply ? Number((burned * 1_000_000n) / token.totalSupply) / 10_000 : undefined;
     return {
       checks: [...holders.checks, ...deployer.checks],
-      facts: { holders: holders.facts.holders, deployer: deployer.facts.address, launches: deployer.facts.launches },
+      facts: { holders: holders.facts.holders, deployer: deployer.facts.address, launches: deployer.facts.launches, burnedPct },
       flow: buildFlow(token, transfers, holders.facts, deployer.facts.address, pairs),
       meta: await metaP,
+      burnedPct,
     };
   } catch (err) {
     console.error('on-chain checks failed', (err as Error)?.message ?? err);
@@ -177,7 +194,7 @@ async function checkOnchain(token: TokenInfo, pairs: DexPair[]): Promise<{ check
 }
 
 /** Rule-based one-liner until the AI verdict lands: the two worst findings, or an all-clear. */
-function verdict(checks: Check[]): string {
+export function verdict(checks: Check[]): string {
   const rank = { bad: 0, warn: 1, info: 2, ok: 3 } as const;
   const worst = checks
     .filter(c => c.status === 'bad' || c.status === 'warn')
